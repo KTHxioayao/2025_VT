@@ -162,3 +162,92 @@ Secant method requires the intersection of extensions of points g'(x) and g'(x+1
 Secant method need fewer iteration times but it needs more effort in programming.  
 The convergence speed is fast comparing with bisection method.
 ### f) When you just should program one of them: Would you use bisection or secant, here? In general, for another function g(x) to be maximized: When would you switch and use the other algorithm?
+
+
+## Question 2: Computer arithmetics (variance)
+
+A known formula for estimating the variance based on a vector of n observations is
+
+$$
+\operatorname{Var}(\vec{x})=\frac{1}{n-1}\left(\sum_{i=1}^n x_i^2-\frac{1}{n}\left(\sum_{i=1}^n x_i\right)^2\right)
+$$
+
+### a) Write an R function that calculates the variance in this way
+
+```{r}
+
+myvar = function(x_i) {
+    n = length(x_i)
+    if (n == 1){
+      return(c(0))
+    }
+    sum_1 = sum(x_i^2)
+    sum_2 = (1/n) * (sum(x_i)^2)
+    res = (sum_1 - sum_2) / (n - 1)
+    return(res)
+}
+```
+
+### b)Generate a vector x = (x1, . . . , x10000) with 10000 random numbers with mean 108 and variance 1
+
+```{r}
+set.seed(1234)
+x = rnorm(10000, mean = 108, sd = 1)
+```
+
+### c)For each subset Xi = {x1, . . . , xi}, i = 1, . . . , 10000 compute the difference Yi = myvar(Xi) −var(Xi), where var(Xi) is the standard variance estimation function in R. Plot the dependence Yi on i. Draw conclusions from this plot. How well does your function work? Can you explain the behaviour?
+
+```{r}
+
+compute_difference = function(Xi) {
+    n = length(Xi)
+    diff_res = c()
+    for (i in 1:n) {
+        Xi_i = Xi[1:i]
+        if (length(Xi_i) == 1){
+          var = 0
+        }else{
+          var = var(Xi_i)
+        }
+        Yi = myvar(Xi_i) - var
+        diff_res = c(diff_res, Yi)
+        #plot(i, Yi, col = "blue", pch = 19, xlab = "i", ylab = "Yi", main = "Plot of Yi")
+    }
+    
+    plot(1:n, diff_res, col = "blue", pch = 19, xlab = "i", ylab = "Yi", main = "Plot of Yi")
+ 
+}
+compute_difference(x)
+```
+
+function works well, the difference between the two variance estimation methods is close to 0. The difference is not exactly 0 because of the floating-point arithmetic in R.
+
+### d)How can you better implement a variance estimator? Find and implement a formula that will give the same results as var().
+
+Welford's method to calculate the variance is more numerically stable than the standard formula. The formula is as follows:
+
+$$
+s^2 = s^2_{n-1} + (x_n - \bar{x}_{n-1}) \cdot (x_n - 2 \cdot \bar{x}_{n-1})
+$$
+
+```{r}
+
+variance_Welford = function(x_i) {
+    n = length(x_i)
+    if (n == 1){
+      return(c(0))
+    }
+    M = 0
+    S = 0
+    for (i in 1:n) {
+        M = M + (x_i[i] - M) / i
+        S = S + (x_i[i] - M) * (x_i[i] - M)
+    }
+    res = S / (n - 1)
+    return(res)
+}
+
+print(variance_Welford(x))
+
+print(var(x))
+```
