@@ -33,17 +33,71 @@ coordinates <- expand.grid(x_values, y_values)
 
 results <- matrix(apply(coordinates, 1, function(data) f(data[1], data[2])),nrow=length(x_values))
 
-contour(x_values, y_values, results,nlevels = 10,xlab = "x", ylab = "y", main = "Contour Plot of f(x, y)",
+contour(x_values, y_values, results,nlevels = 40,xlab = "x", ylab = "y", main = "Contour Plot of f(x, y)",
         col = "blue", lty = 1, lwd = 2)
 ```
 
 
 
 ### b) Derive the gradient and Hessian matrix for the function and write R-code for them.
+```{r echo=FALSE}
 
+gradient <- function (x, y) {
+  return(matrix(c(
+    cos(x + y) + 2 * x - 2 * y - 1.5, cos(x + y) + 2 * y - 2 * x + 2.5
+  ), nrow = 2))
+  
+}
+
+Hessian <- function (x , y) {
+  return(matrix(c(
+    -sin(x + y) + 2, -sin(x + y) - 2, -sin(x + y) - 2, -sin(x + y) + 2
+  ), nrow = 2))
+}
+```
 
 ### c) Write your own function applying the Newton algorithm that has the starting value $(x_0, y_0)$ as a parameter
+```{r echo=FALSE}
+#stopping criteria
+convergence_crit<- function(res) {
+  xt1<- res[,dim(res)[2]]
+  xt<- res[,dim(res)[2]-1]
+  return(as.vector(t (xt1-xt) %*% (xt1-xt)))
+}
+
+Newton_algorithm <- function (x_0, y_0) {
+  res <- matrix ( c(x_0,y_0), nrow=2)
+   res <- cbind(res, Hessian (x_0, y_0) %*% gradient (x_0 ,y_0)) 
+   
+   while (convergence_crit(res) >0.001) {
+     xt1<- res[,dim(res)[2]]
+     res_add <- xt1 - solve (Hessian (xt1[1], xt1[2])) %*% gradient (xt1[1] ,xt1[2])
+     res <- cbind(res, res_add)
+   }
+   return (res)
+} 
+
+
+```
+
 
 ### d) Test several starting values such that you have examples which give at least three different results.
+```{r echo=FALSE}
+values<- matrix (c(2,4,
+                   -1,0,
+                   -2,-3,
+                   2,0
+                   #1,2,
+                   #4,0.1
+                  ),
+                 ncol = 2,byrow = TRUE)
+for (i in 1:nrow(values)) {
+  res_df<-Newton_algorithm(values[i,1],values[i,2])
+  #browser()
+  cat('Newton_algorithm gives a mimimum value at (',print(res_df[1,dim(res_df)[2]]), ',', print(res_df[2,dim(res_df)[2]]),'at the ',dim(Newton_algorithm(2,1))[2]-1, 'iteration for a=',values[i,1], 'b=', values[i,2],'\n')
+}
+```
  
 ### e) Investigate the candidate results which you have got. Is one of the candidates a global minimum? Which type of solutions are the other candidates?
+The last solution gives (-1.59, -2.59) is a global minimum. (1.54, -0.55) is the saddle point. (2.59, 1.59) is a local maximum.
+
