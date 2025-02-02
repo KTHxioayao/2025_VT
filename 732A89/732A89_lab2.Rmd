@@ -1,0 +1,49 @@
+---
+title: "Lab 1 Group 8"
+output:
+  pdf_document:
+    latex_engine: lualatex
+date: "2025-01-25"
+author:
+  - Liuxi Mei
+  - Xiaochen Liu
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1: Optimization of a two-dimensional function
+
+Consider the two-dimensional function:
+
+$$f(x, y) = \sin(x + y) + (x - y)^2 - 1.5x + 2.5y + 1$$
+
+for $x \in [-1.5, 4]$ and $y \in [-3, 4]$.The aim is to search for the position $(x^*, y^*)$ of the global minimum of $f$ in the given range for $x$ and $y$.
+
+### a) Make a contour plot for this function.
+```{r echo=FALSE}
+
+f <- function(x, y) {
+  sin(x + y) + (x - y)^2 - 1.5 * x + 2.5 * y + 1
+}
+x_values <- seq(-1.5, 4, length.out = 200)
+y_values <- seq(-3, 4, length.out = 200)
+coordinates <- expand.grid(x_values, y_values)
+
+results <- matrix(apply(coordinates, 1, function(data) f(data[1], data[2])),nrow=length(x_values))
+
+contour(x_values, y_values, results,nlevels = 10,xlab = "x", ylab = "y", main = "Contour Plot of f(x, y)",
+        col = "blue", lty = 1, lwd = 2)
+```
+
+
+
+### b) Derive the gradient and Hessian matrix for the function and write R-code for them.
+
+
+### c) Write your own function applying the Newton algorithm that has the starting value $(x_0, y_0)$ as a parameter
+
+### d) Test several starting values such that you have examples which give at least three different results.
+ 
+### e) Investigate the candidate results which you have got. Is one of the candidates a global minimum? Which type of solutions are the other candidates?
