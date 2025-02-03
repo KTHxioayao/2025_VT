@@ -1,0 +1,174 @@
+---
+title: "Lab 1 Group 8"
+output:
+  pdf_document:
+    latex_engine: lualatex
+date: "2025-01-25"
+author:
+  - Liuxi Mei
+  - Xiaochen Liu
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1: Optimization of a two-dimensional function
+
+Consider the two-dimensional function:
+
+$$f(x, y) = \sin(x + y) + (x - y)^2 - 1.5x + 2.5y + 1$$
+
+for $x \in [-1.5, 4]$ and $y \in [-3, 4]$.The aim is to search for the position $(x^*, y^*)$ of the global minimum of $f$ in the given range for $x$ and $y$.
+
+### a) Make a contour plot for this function.
+```{r echo=FALSE}
+
+f <- function(x, y) {
+  sin(x + y) + (x - y)^2 - 1.5 * x + 2.5 * y + 1
+}
+x_values <- seq(-1.5, 4, length.out = 200)
+y_values <- seq(-3, 4, length.out = 200)
+coordinates <- expand.grid(x_values, y_values)
+
+results <- matrix(apply(coordinates, 1, function(data) f(data[1], data[2])),nrow=length(x_values))
+
+contour(x_values, y_values, results,nlevels = 40,xlab = "x", ylab = "y", main = "Contour Plot of f(x, y)",
+        col = "blue", lty = 1, lwd = 2)
+```
+
+
+
+### b) Derive the gradient and Hessian matrix for the function and write R-code for them.
+```{r echo=FALSE}
+
+gradient <- function (x, y) {
+  return(matrix(c(
+    cos(x + y) + 2 * x - 2 * y - 1.5, cos(x + y) + 2 * y - 2 * x + 2.5
+  ), nrow = 2))
+  
+}
+
+Hessian <- function (x , y) {
+  return(matrix(c(
+    -sin(x + y) + 2, -sin(x + y) - 2, -sin(x + y) - 2, -sin(x + y) + 2
+  ), nrow = 2))
+}
+```
+
+### c) Write your own function applying the Newton algorithm that has the starting value $(x_0, y_0)$ as a parameter
+```{r echo=FALSE}
+#stopping criteria
+convergence_crit<- function(res) {
+  xt1<- res[,dim(res)[2]]
+  xt<- res[,dim(res)[2]-1]
+  return(as.vector(t (xt1-xt) %*% (xt1-xt)))
+}
+
+Newton_algorithm <- function (x_0, y_0) {
+  res <- matrix ( c(x_0,y_0), nrow=2)
+   res <- cbind(res, Hessian (x_0, y_0) %*% gradient (x_0 ,y_0)) 
+   
+   while (convergence_crit(res) >0.001) {
+     xt1<- res[,dim(res)[2]]
+     res_add <- xt1 - solve (Hessian (xt1[1], xt1[2])) %*% gradient (xt1[1] ,xt1[2])
+     res <- cbind(res, res_add)
+   }
+   return (res)
+} 
+
+
+```
+
+
+### d) Test several starting values such that you have examples which give at least three different results.
+```{r echo=FALSE}
+values<- matrix (c(2,4,
+                   -1,0,
+                   -2,-3,
+                   2,0
+                   #1,2,
+                   #4,0.1
+                  ),
+                 ncol = 2,byrow = TRUE)
+for (i in 1:nrow(values)) {
+  res_df<-Newton_algorithm(values[i,1],values[i,2])
+  #browser()
+  cat('Newton_algorithm gives a mimimum value at (',print(res_df[1,dim(res_df)[2]]), ',', print(res_df[2,dim(res_df)[2]]),'at the ',dim(Newton_algorithm(2,1))[2]-1, 'iteration for a=',values[i,1], 'b=', values[i,2],'\n')
+}
+```
+ 
+### e) Investigate the candidate results which you have got. Is one of the candidates a global minimum? Which type of solutions are the other candidates?
+The last solution gives (-1.59, -2.59) is a global minimum. (1.54, -0.55) is the saddle point. (2.59, 1.59) is a local maximum.
+
+
+
+## Question 2: Maximum likelihood
+
+Three doses (0.1, 0.3, and 0.9 g) of a drug and placebo (0 g) are tested in a study. Afterward, a dose-dependent event is recorded. The data of $n = 10$ subjects is shown in Table 1; $x_i$ is the dose in grams; $y_i = 1$ if the event occurred, $y_i = 0$ otherwise.
+
+| $x_i$ (g) | 0   | 0   | 0   | 0.1 | 0.1 | 0.3 | 0.3 | 0.9 | 0.9 | 0.9 |
+|-----------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+| $y_i$     | 0   | 0   | 1   | 0   | 1   | 1   | 1   | 0   | 1   | 1   |
+
+Table 1: Data for Question 2
+
+You should fit a simple logistic regression
+
+$$ p(x) = P(Y = 1|x) = \frac{1}{1 + \exp(-\beta_0 - \beta_1 x)} $$
+
+to the data, i.e., estimate $\beta_0$ and $\beta_1$. One can show that the log likelihood is
+
+$$ g(b) = \sum_{i=1}^{n} \left[ y_i \log\left\{(1 + \exp(-\beta_0 - \beta_1 x_i))^{-1}\right\} + (1 - y_i) \log\left\{1 - (1 + \exp(-\beta_0 - \beta_1 x_i))^{-1}\right\} \right] $$
+
+where $b = (\beta_0, \beta_1)^T$ and the gradient is
+
+$$ g'(b) = \sum_{i=1}^{n} \left[ y_i - \frac{1}{1 + \exp(-\beta_0 - \beta_1 x_i)} \right] \begin{pmatrix} 1 \\ x_i \end{pmatrix} $$ \`\`\`
+
+#### a. Write a function for an ML-estimator for $(\beta_0, \beta_1)$ using the steepest ascent method with a step-size-reducing line search (back-tracking).For this, you can use and modify the code for the steepest ascent example of the lecture. The function should count the number of function and gradient evaluations.
+
+```{r echo= FALSE}
+x <- c(0,0,0,0.1,0.1,0.3,0.3,0.9,0.9,0.9)
+y <- c(0,0,1,0,1,1,1,0,1,1)
+
+data <- rbind (x,y)
+formular <- function(x) {1/(1+e^(-b[1]-b[2]*x))}
+
+gradient <- function (b) {
+  for (i in length(x)) {
+    gradient <- (y[i]- formular(x[i])) %*% matrix (c(1,x[i]),nwor=2)
+  }
+  
+}
+#Steepest ascent function:
+steepestasc <- function(x0, eps=1e-8, alpha0=1)
+{
+  xt   <- x0
+  conv <- 999
+  points(xt[1], xt[2], col=2, pch=4, lwd=3)
+  while(conv>eps)
+  {
+    alpha <- alpha0
+    xt1   <- xt
+    xt    <- xt1 + alpha*gradient(xt1)
+    while (g(xt)<g(xt1))
+    {
+      alpha <- alpha/2
+      xt    <- xt1 + alpha*gradient(xt1)
+    }
+    points(xt[1], xt[2], col=2, pch=4, lwd=1)
+    conv <- sum((xt-xt1)*(xt-xt1))
+  }
+  points(xt[1], xt[2], col=4, pch=4, lwd=3)
+  xt
+}
+steepestasc(c(1, 0))
+
+```
+
+
+#### b. Compute the ML-estimator with the function from a. for the data $(x_i, y_i)$ above.Use a stopping criterion such that you can trust five digits of both parameter estimates for $\beta_0$ and $\beta_1$. Use the starting value $(\beta_0, \beta_1) = (-0.2, 1)$. The exact way to use backtracking can be varied. Try two variants and compare the number of function and gradient evaluations performed to convergence.
+
+#### c. Use now the function `optim` with both the BFGS and the Nelder-Mead algorithm.Do you obtain the same results as for b.? Is there any difference in the precision of the result? Compare the number of function and gradient evaluations that are given in the standard output of `optim`.
+
+#### d. Use the function `glm` in R to obtain an ML-solution and compare it with your results before.
