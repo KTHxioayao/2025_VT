@@ -142,10 +142,9 @@ p <- function(x, b) {
 
 g <- function(b) {
   g <- 0
-  for (i in dim(data)[2]) {
+  for (i in 1:dim(data)[2]) {
     mat <- as.matrix(data[, i])
-    g_add <- mat[2] * log(1 * p(mat[1], b = b)) + (1 - mat[2]) * p(mat[1], b =
-                                                                     b)
+    g_add <- mat[2] * log(1 * p(mat[1], b = b)) + (1 - mat[2]) * log(1-p(mat[1],b))
     g <- g_add + g
   }
   return(g)
@@ -153,9 +152,9 @@ g <- function(b) {
 # define the gradient function
 gradient <- function (b) {
   gradient <- matrix(c(0, 0))
-  for (i in dim(data)[2]) {
+  for (i in 1:dim(data)[2]) {
     mat <- as.matrix(data[, i])
-    gradient_add <- mat[2] - p(mat[1],b) * matrix (c(1, mat[1]))
+    gradient_add <- (mat[2] - p(mat[1],b)) * matrix (c(1, mat[1]))
     gradient <- gradient_add + gradient
   }
   return(gradient)
@@ -186,7 +185,8 @@ steepestasc <- function(x0, eps = 0, alpha0 = 1)
     i<- i+1
   }
   #points(xt[1], xt[2], col=4, pch=4, lwd=3)
-  xt
+   cat('Steepest ascent method gives result',print(xt[,i+1]), 'at the ',i, 'th iteration for',xt[,1],'\n')
+
 }
 steepestasc(c(-0.2, 1))
 
@@ -195,6 +195,12 @@ steepestasc(c(-0.2, 1))
 
 #### b. Compute the ML-estimator with the function from a. for the data $(x_i, y_i)$ above.Use a stopping criterion such that you can trust five digits of both parameter estimates for $\beta_0$ and $\beta_1$. Use the starting value $(\beta_0, \beta_1) = (-0.2, 1)$. The exact way to use backtracking can be varied. Try two variants and compare the number of function and gradient evaluations performed to convergence.
 
+```{r}
+steepestasc(c(-0.2,1))
+steepestasc(c(2,1))
+```
+
 #### c. Use now the function `optim` with both the BFGS and the Nelder-Mead algorithm.Do you obtain the same results as for b.? Is there any difference in the precision of the result? Compare the number of function and gradient evaluations that are given in the standard output of `optim`.
+
 
 #### d. Use the function `glm` in R to obtain an ML-solution and compare it with your results before.
