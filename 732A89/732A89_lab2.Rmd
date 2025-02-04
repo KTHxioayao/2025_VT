@@ -201,15 +201,20 @@ steepestasc(c(2,1))
 ```
 
 #### c. Use now the function `optim` with both the BFGS and the Nelder-Mead algorithm.Do you obtain the same results as for b.? Is there any difference in the precision of the result? Compare the number of function and gradient evaluations that are given in the standard output of `optim`.
+
+A: we get the different results for the BFGS and the Nelder-Mead algorithm.also the precision of the result is different. The number of function and gradient evaluations are different for the BFGS and the Nelder-Mead algorithm. the BFG is 147 and Nelder-Mead is 407, it seems that Nelder-Mead algorithm need more iterations to converge because lacking of the gradient information.
+
 ```{r echo= TRUE}
 model_BFGS<- optim(c(-0.2,1), g, gr=gradient, method='BFGS')
-print(model_BFGS$par)
+print(model_BFGS)
 model_nelder<- optim(c(-0.2,1), g, method='Nelder-Mead')
-print(model_nelder$par)
+print(model_nelder)
 ```
 
 
 #### d. Use the function `glm` in R to obtain an ML-solution and compare it with your results before.
+
+A: The result is similar to the result from the steepest ascent method. but the iteration number is different. the glm function is only 4, the steepest ascent need 38 times.
 
 ```{r echo= TRUE}
 model_glm <- glm(y ~ x, family = binomial(link = "logit"))
