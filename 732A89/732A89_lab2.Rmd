@@ -144,7 +144,7 @@ g <- function(b) {
   g <- 0
   for (i in 1:dim(data)[2]) {
     mat <- as.matrix(data[, i])
-    g_add <- mat[2] * log(1 * p(mat[1], b = b)) + (1 - mat[2]) * log(1-p(mat[1],b))
+    g_add <- mat[2] * log(p(mat[1], b = b)) + (1 - mat[2]) * log(1-p(mat[1],b))
     g <- g_add + g
   }
   return(g)
@@ -195,12 +195,25 @@ steepestasc(c(-0.2, 1))
 
 #### b. Compute the ML-estimator with the function from a. for the data $(x_i, y_i)$ above.Use a stopping criterion such that you can trust five digits of both parameter estimates for $\beta_0$ and $\beta_1$. Use the starting value $(\beta_0, \beta_1) = (-0.2, 1)$. The exact way to use backtracking can be varied. Try two variants and compare the number of function and gradient evaluations performed to convergence.
 
-```{r}
+```{r echo= FALSE}
 steepestasc(c(-0.2,1))
 steepestasc(c(2,1))
 ```
 
 #### c. Use now the function `optim` with both the BFGS and the Nelder-Mead algorithm.Do you obtain the same results as for b.? Is there any difference in the precision of the result? Compare the number of function and gradient evaluations that are given in the standard output of `optim`.
+```{r echo= TRUE}
+model_BFGS<- optim(c(-0.2,1), g, gr=gradient, method='BFGS')
+print(model_BFGS$par)
+model_nelder<- optim(c(-0.2,1), g, method='Nelder-Mead')
+print(model_nelder$par)
+```
 
 
 #### d. Use the function `glm` in R to obtain an ML-solution and compare it with your results before.
+
+```{r echo= TRUE}
+model_glm <- glm(y ~ x, family = binomial(link = "logit"))
+summary(model_glm)
+
+```
+
