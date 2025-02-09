@@ -1,0 +1,105 @@
+---
+title: "Lab 1 Group 8"
+output:
+  pdf_document:
+    latex_engine: lualatex
+date: "2025-01-25"
+author:
+  - Liuxi Mei
+  - Xiaochen Liu
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1: Sampling algorithms for a triangle distribution
+
+Consider the following density with a triangle-shape (another triangle distribution than considered in Lecture 3):
+
+$$
+f(x) =
+\begin{cases} 
+0 & \text{if } x < -1 \text{ or } x > 1, \\
+x + 1 & \text{if } -1 \le x \le 0, \\
+1 - x & \text{if } 0 < x \le 1.
+\end{cases}
+$$
+
+We are interested to generate draws of a random variable X with this density.
+
+a.  Choose an appropriate and simple envelope e(x) for density and program a random generator for X using rejection sampling. Generate 10000 random variables and plot a histogram.
+
+```{r echo=TRUE}
+fx <- function (x) {
+  ifelse (x >= -1 & x < 0, x + 1, ifelse (x <= 1,  1 - x, 0))
+}
+
+ex <- function (x) {
+  ifelse (x >= -1 & x <= 1, 1, 0)
+}
+set.seed (2025)
+u <- runif(10000, -1 , 1)
+
+accept_prob <- fx(u) / ex(u)
+uni_rn <- runif(10000,0,1)
+
+res_1 <- u[uni_rn < accept_prob]
+hist(res_1, breaks = 100)
+
+```
+
+b.  In Lecture 3, another triangle distribution was generated using the inverse cumulative distribution function method; see pages 9-10 of the lecture notes. Let Y be a random variable following this distribution. A random variable −Y has a triangle distribution in the interval [−1, 0]. Program a random generator for X using composition sampling based on Y and −Y . You can use the code from the lecture to generate Y . Generate 10000 random variables and plot a histogram.
+
+The cumulative distribution function (CDF) is:
+
+$$
+F(x) =
+\begin{cases} 
+0, & x < -1, \\
+\frac{x^2}{2} + x + \frac{1}{2}, & -1 \leq x \leq 0, \\
+\frac{1}{2} + x - \frac{x^2}{2}, & 0 < x \leq 1, \\
+1, & x > 1.
+\end{cases}
+$$
+
+The inverse cumulative distribution function (quantile function) is:
+
+$$
+F^{-1}(p) =
+\begin{cases}
+-1 + \sqrt{2p}, & 0 \leq p \leq \frac{1}{2}, \\
+1 - \sqrt{2(1 - p)}, & \frac{1}{2} < p \leq 1.
+\end{cases}
+$$
+
+```{r echo=TRUE}
+library('triangle')
+set.seed (2025)
+v <- runif(10000)
+
+part_1 <- 1-sqrt(2*(1-v[v>0.5])) 
+part_2 <- -1+sqrt(2*v[v<0.5])
+res_2<- append(part_1,part_2)
+hist(res_2, breaks = 100)
+
+```
+
+c.  Sums or differences of two independent uniformly distributed variables can also have some triangle distribution. When U1, U2 are two independent Unif [0, 1]-distributed random variables, U1 − U2 has the same distribution as X. Use this result to program a generator for X. Generate 10000 random variables and plot a histogram.
+
+
+d.  Consider the amount of programming for the three methods and compare the number of random value generation and other time consuming operations needed by the methods to judge expected running time. Which of the three methods do you prefer if you had to generate samples of X? Use data from one method to determine the variance of X.
+
+Question 2: Bivariate normal and normal mixture distribution In parts a. and b., we generate random variables with bivariate normal distributions with different methods. Then, we generate bivariate normal mixtures.
+
+a.  Generate a two-dimensional random vector $\begin{pmatrix} x_1 \\ x_2 \end{pmatrix}$ that has a two-dimensional normal distribution with mean vector $\begin{pmatrix} 0 \\ 0 \end{pmatrix}$ and covariance matrix $\begin{pmatrix} 0.6 & 0 \\ 0 & 0.6 \end{pmatrix}$ using the Box-Muller method and using only `runif` as random number generator. Measure the time for generating 10,000,000 random vectors (note: one possibility to measure time is with the function `proc.time()`).
+
+b.  Generate again 10,000,000 random vectors with this distribution, but now using either the one-dimensional function `rnorm` or the package `mvtnorm`. Explain why you have chosen to generate it in the way you did. Measure the computation time and compare it to the result in a.
+
+c.  Now, we consider the density of the bivariate normal mixture in Lecture 2. There, observations follow with 50% probability each one of the following two distributions:
+
+-   normal distribution with mean vector $\begin{pmatrix} 0 \\ 0 \end{pmatrix}$ and covariance matrix $\begin{pmatrix} 0.6 & 0 \\ 0 & 0.6 \end{pmatrix}$
+
+-   normal distribution with mean vector $\begin{pmatrix} 1.5 \\ 1.5 \end{pmatrix}$ and covariance matrix $\begin{pmatrix} 0.5 & 0 \\ 0 & 0.5 \end{pmatrix}$
+
+Generate 1000 random samples according to that distribution and plot these 1000 samples $\begin{pmatrix} x_1 \\ x_2 \end{pmatrix}$. Does the plot look satisfactory, and why do you conclude that?
