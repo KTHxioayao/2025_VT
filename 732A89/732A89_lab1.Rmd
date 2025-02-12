@@ -42,7 +42,9 @@ The maximum point of g(x) is estimated to be 0.35 where variable x is around 1 a
 ```{r echo=FALSE}
 #define the derivation function
 g_fun_prime<- function(x){
-  res<-(1/(x+1)*denominator(x)-numerator(x)*3/2)/(numerator(x))^2
+num <- (1 / (x + 1)) * denominator(x) - numerator(x) * (3 / 2) * x^(1/2)
+  denom <- (denominator(x))^2
+  res <- num / denom  
   return(res)
 }
 # Compute the function values
@@ -69,7 +71,7 @@ bisection<-function(a,b) {
 #initialization   
  var<- c((a+b)/2)
   i=1
-  while(length(var)<2 || convergence_crit(var[i-1],var[i])>0.001) {
+  while(length(var)<2 || convergence_crit(var[i-1],var[i])>0.00001) {
     if(g_fun_prime(a)*g_fun_prime(tail(var,1))<=0)  {b<-tail(var,1)}
     if(g_fun_prime(tail(var,1))*g_fun_prime(b)<0)  {a<-tail(var,1)}
        var<-c(var,(a+b)/2)
@@ -84,14 +86,16 @@ print(bisection(0,5))
 print(length(bisection(0,5)))
 
 ```
-The local maximum is calculated to be 0.92346 for the range [0,5] by the application of bisection function, convergence reaches at the 13th iteration.
+
+The local maximum is calculated to be 0.9610653 for the range [0,5] by the application of bisection function, convergence reaches at the 19th iteration.
 
 ### d) Write your own R function applying the secant method to g' to find a local maximum of g for a user-selected pair of starting values.
 
 ```{r echo=FALSE}
 #define the derivation-derivation function
 g_fun_prime_prime<- function(xt,xt_minus1){
-  res<-(g_fun_prime(xt)-g_fun_prime(xt_minus1))/(xt-xt_minus1)
+  #1e-10 is added to avoid 0/0
+  res<-(g_fun_prime(xt)-g_fun_prime(xt_minus1))/(xt-xt_minus1+ 1e-10)
   return(res)
 }
 
@@ -101,20 +105,17 @@ secant<- function(x0,x1){
   xt1<-as.vector(res)[[i-1]]
  
   xt<-as.vector(res)[[i-2]]
- 
-  while (convergence_crit(xt,xt1)>0.001) {
-    
+  while (convergence_crit(xt,xt1)> 0.00001) {
+      if (i > 99) {
+      cat("Reached max iteration:", 99, "\n")
+      break  # Stop iteration if max_iter is reached
+    }
     
     res_add<-xt-g_fun_prime(xt)/g_fun_prime_prime(xt1,xt)
-    if (is.na(res_add)) {
-      stop("NA value encountered, stopping the iteration.")
-      
-    }
     res[paste0("x", i-1)]<-res_add
     xt <- xt1
     xt1 <- res_add
-    
-    
+  
     i<-i+1
   }
     return(tail(res,1))
@@ -123,17 +124,19 @@ secant<- function(x0,x1){
 print(secant(2,1))
 print(dim(secant(2,1))[2]-2)
 ```
-The local maximum is calculated to be 0.923594 for the range [2,1] by the application of secant function, convergence reaches at the 6th iteration
+
+The local maximum is calculated to be 0.9610603 for the range [2,1] by the application of secant function, convergence reaches at the 6th iteration
 
 ### e) Run the functions in c. and d. for different starting intervals/pairs of starting values and check when they converge to the true maximum and when not. Discuss why. Compare the two methods also in terms of number of iterations used and programming effort required.
+
 ```{r echo=FALSE}
 values<- matrix (c(0,2,
                   2,0,
                   #0,100,
                   0,5,
                   5,0,
-                  3,100
-                  #0,100
+                  2,0.5,
+                  0,100
                   ),
                  ncol = 2,byrow = TRUE)
 for (i in 1:nrow(values)) {
@@ -143,16 +146,15 @@ for (i in 1:nrow(values)) {
 
 
 ```
-Bisection method gives correct values while g'(a) and g'(b) have g'(a)*g'(b)<0. But when both of them have positive or negative value, the method doesn't work even if the true root is in this range, as can be see for range [0,100]. And for example in range [3,100], the given range doesn't include the true root, the function can also convergence at a wrong root, where g'(x)=0 but a local minimum.
-The iteration number is around 12.
+
+Bisection method gives correct values while g'(a) and g'(b) have g'(a)\*g'(b)\<0. But when both of them have positive or negative value, the method doesn't work even if the true root is in this range. When appropriate range is chose, it can always find a root.  
 
 ```{r echo=FALSE}
 values<- matrix (c(0.1,4,
-                   0.1,
-                   0.4,
-                   2,1
-                   #1,2,
-                   #4,0.1
+                   0.1,0.4,
+                   2,1,
+                   1,2,
+                   4,0.1
                   ),
                  ncol = 2,byrow = TRUE)
 for (i in 1:nrow(values)) {
@@ -162,13 +164,12 @@ for (i in 1:nrow(values)) {
 
 
 ```
-Secant method requires the intersection of extensions of points g'(x) and g'(x+1) with x axis. If there is no intersection, it can not find the root.And the position of the inition values values, as the longing of the line is towards x+1 's direction.Even if the range including the true root is given, i.g.[0.1,4], the function can also give a wrong result.
-Secant method need fewer iteration times but it needs more effort in programming.  
-The convergence speed is fast comparing with bisection method.
+
+Secant method requires the intersection of extensions of points g'(x) and g'(x+1) with x axis. If the intersection point is too far from the true root, convergence is not guaranteed. Even if the range including the true root is given, i.g.[0.1,4], the function can also give a wrong result. Thus, initial values matter. The convergence speed is fast comparing with bisection method but it requires more programming effort.
 
 ### f) When you just should program one of them: Would you use bisection or secant, here? In general, for another function g(x) to be maximized: When would you switch and use the other algorithm?
-Bisection method is preferred here as it is easier to program and understand in this simple situation.
-However, for more complicated question, secant method is better than bisection method as it converges quicker. 
+
+Bisection method is preferred here as it is easier to program and understand in this simple situation. However, for more complicated question, secant method is better than bisection method as it converges quicker. 
 
 ## Question 2: Computer arithmetics (variance)
 
@@ -194,11 +195,11 @@ myvar = function(x_i) {
 }
 ```
 
-### b)Generate a vector x = (x1, . . . , x10000) with 10000 random numbers with mean 108 and variance 1
+### b)Generate a vector x = (x1, . . . , x10000) with 10000 random numbers with mean 10^8 and variance 1
 
 ```{r}
 set.seed(1234)
-x = rnorm(10000, mean = 108, sd = 1)
+x = rnorm(10000, mean = 10^8, sd = 1)
 ```
 
 ### c)For each subset Xi = {x1, . . . , xi}, i = 1, . . . , 10000 compute the difference Yi = myvar(Xi) −var(Xi), where var(Xi) is the standard variance estimation function in R. Plot the dependence Yi on i. Draw conclusions from this plot. How well does your function work? Can you explain the behaviour?
@@ -259,7 +260,9 @@ print(var(x))
 ```
 
 \newpage
+
 ##Appendix
+
 ```{r eval = FALSE}
 ##Assignment 1
 #a)
@@ -282,7 +285,9 @@ plot(x_values, y_values, type = "l", col = "blue", lwd = 2,
 #b)
 #define the derivation function
 g_fun_prime<- function(x){
-  res<-(1/(x+1)*denominator(x)-numerator(x)*3/2)/(numerator(x))^2
+  num <- (1 / (x + 1)) * denominator(x) - numerator(x) * (3 / 2) * x^(1/2)
+  denom <- (denominator(x))^2
+  res <- num / denom  
   return(res)
 }
 # Compute the function values
@@ -303,14 +308,14 @@ convergence_crit<- function(xt,xt1) {
 #bisection
 bisection<-function(a,b) {
   if(g_fun_prime(a)*g_fun_prime(b)>=0) {stop('check input')}
-#initialization   
- var<- c((a+b)/2)
+  #initialization   
+  var<- c((a+b)/2)
   i=1
-  while(length(var)<2 || convergence_crit(var[i-1],var[i])>0.001) {
+  while(length(var)<2 || convergence_crit(var[i-1],var[i])>0.00001) {
     if(g_fun_prime(a)*g_fun_prime(tail(var,1))<=0)  {b<-tail(var,1)}
     if(g_fun_prime(tail(var,1))*g_fun_prime(b)<0)  {a<-tail(var,1)}
-       var<-c(var,(a+b)/2)
-       i<-i+1
+    var<-c(var,(a+b)/2)
+    i<-i+1
   }
   return(var)
 }
@@ -322,8 +327,10 @@ print(length(bisection(0,5)))
 
 #d)
 #define the derivation-derivation function
+#define the derivation-derivation function
 g_fun_prime_prime<- function(xt,xt_minus1){
-  res<-(g_fun_prime(xt)-g_fun_prime(xt_minus1))/(xt-xt_minus1)
+  #1e-10 is added to avoid 0/0
+  res<-(g_fun_prime(xt)-g_fun_prime(xt_minus1))/(xt-xt_minus1+ 1e-10)
   return(res)
 }
 
@@ -331,25 +338,22 @@ secant<- function(x0,x1){
   res<- data.frame('x0'=x0,'x1'=x1)
   i=3
   xt1<-as.vector(res)[[i-1]]
- 
+  
   xt<-as.vector(res)[[i-2]]
- 
-  while (convergence_crit(xt,xt1)>0.001) {
-    
+  while (convergence_crit(xt,xt1)> 0.00001) {
+    if (i > 99) {
+      cat("Reached max iteration:", 99, "\n")
+      break  # Stop iteration if max_iter is reached
+    }
     
     res_add<-xt-g_fun_prime(xt)/g_fun_prime_prime(xt1,xt)
-    if (is.na(res_add)) {
-      stop("NA value encountered, stopping the iteration.")
-      
-    }
     res[paste0("x", i-1)]<-res_add
     xt <- xt1
     xt1 <- res_add
     
-    
     i<-i+1
   }
-    return(tail(res,1))
+  return(tail(res,1))
 }
 # calculate the local maximum of g for self-selected starting interval
 print(secant(2,1))
@@ -357,24 +361,24 @@ print(dim(secant(2,1))[2]-2)
 
 #e)
 values<- matrix (c(0,2,
-                  2,0,
-                  #0,100,
-                  0,5,
-                  5,0,
-                  3,100
-                  #0,100
-                  ),
-                 ncol = 2,byrow = TRUE)
+                   2,0,
+                   #0,100,
+                   0,5,
+                   5,0,
+                   2,0.5,
+                   0,100
+),
+ncol = 2,byrow = TRUE)
 for (i in 1:nrow(values)) {
   res_vector<-bisection(values[i,1],values[i,2])
   cat('bisection gives result',print(tail(res_vector,1)), 'at the ',length(res_vector), 'iteration for a=',values[i,1], 'b=', values[i,2],'\n')
+}
   
   values<- matrix (c(0.1,4,
-                   0.1,
-                   0.4,
-                   2,1
-                   #,1,2
-                   #,4,0.1
+                   0.1,0.4,
+                   2,1,
+                   1,2,
+                   4,0.1
                   ),
                  ncol = 2,byrow = TRUE)
 for (i in 1:nrow(values)) {
@@ -384,7 +388,7 @@ for (i in 1:nrow(values)) {
   
 ###Assignment 2
   #a)
-  myvar = function(x_i) {
+ myvar = function(x_i) {
     n = length(x_i)
     if (n == 1){
       return(c(0))
@@ -393,6 +397,7 @@ for (i in 1:nrow(values)) {
     sum_2 = (1/n) * (sum(x_i)^2)
     res = (sum_1 - sum_2) / (n - 1)
     return(res)
+}
     
     #b)
     set.seed(1234)
@@ -413,7 +418,6 @@ compute_difference = function(Xi) {
         diff_res = c(diff_res, Yi)
         #plot(i, Yi, col = "blue", pch = 19, xlab = "i", ylab = "Yi", main = "Plot of Yi")
     }
-    browser()
     plot(1:n, diff_res, col = "blue", pch = 19, xlab = "i", ylab = "Yi", main = "Plot of Yi")
  
 }

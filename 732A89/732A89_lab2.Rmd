@@ -83,24 +83,54 @@ Newton_algorithm <- function (x_0, y_0) {
 
 ### d) Test several starting values such that you have examples which give at least three different results.
 ```{r echo=FALSE}
-values<- matrix (c(2,4,
+values<- matrix (c(0,0.5,
                    -1,0,
-                   -2,-3,
-                   2,0
+                   -2,-3
                    #1,2,
                    #4,0.1
                   ),
                  ncol = 2,byrow = TRUE)
+  points<- matrix(NA,nrow=3, ncol=2)
 for (i in 1:nrow(values)) {
   res_df<-Newton_algorithm(values[i,1],values[i,2])
   #browser()
-  cat('Newton_algorithm gives a mimimum value at (',print(res_df[1,dim(res_df)[2]]), ',', print(res_df[2,dim(res_df)[2]]),'at the ',dim(Newton_algorithm(2,1))[2]-1, 'iteration for a=',values[i,1], 'b=', values[i,2],'\n')
+  cat('Newton_algorithm gives a mimimum value at (',res_df[1,dim(res_df)[2]], ',', res_df[2,dim(res_df)[2]],'at the ',dim(Newton_algorithm(2,1))[2]-1, 'iteration for a=',values[i,1], 'b=', values[i,2],'\n')
+  points[i,1] <- res_df[1,dim(res_df)[2]]
+  points[i,2] <-res_df[2,dim(res_df)[2]]
 }
+
 ```
  
 ### e) Investigate the candidate results which you have got. Is one of the candidates a global minimum? Which type of solutions are the other candidates?
-The last solution gives (-1.59, -2.59) is a global minimum. (1.54, -0.55) is the saddle point. (2.59, 1.59) is a local maximum.
 
+```{r echo=FALSE}
+
+for (i in 1:nrow(points)) {
+  # 获取Hessian矩阵的特征值
+  res <- eigen(Hessian(points[i, 1], points[i, 2]))$values
+  
+  # 判断临界点类型
+  if (res[1] * res[2] < 0) {
+    # 若特征值符号不同，则是鞍点
+    cat(points[i, 1], points[i, 2], 'is a saddle point', '\n')
+  } else if (res[1] > 0) {
+    # 若特征值均为正，则是局部极小点
+    cat(points[i, 1], points[i, 2], 'is a local minimum', '\n')
+  } else {
+    # 若特征值均为负，则是局部极大点
+    cat(points[i, 1], points[i, 2], 'is a local maximum', '\n')
+  }
+}
+```
+
+The last solution gives (-0.55, -1,54) and (2.59, 1.59)  the local minimum. (1.54, 0.55) is a saddle point. 
+Since the function has a lower value in (-0.55, -1,54), it is a global minimum.
+```{r echo=FALSE}
+if (f(points[1,1], points[1,2])> f(points[2,1], points[2,2])) {
+  cat(points[2, 1], points[2, 2], 'is a saddle point', '\n')
+}else{
+  cat(points[1, 1], points[1, 2], 'is a saddle point', '\n') }
+```
 
 
 ## Question 2: Maximum likelihood
@@ -196,19 +226,80 @@ steepestasc(c(-0.2, 1))
 #### b. Compute the ML-estimator with the function from a. for the data $(x_i, y_i)$ above.Use a stopping criterion such that you can trust five digits of both parameter estimates for $\beta_0$ and $\beta_1$. Use the starting value $(\beta_0, \beta_1) = (-0.2, 1)$. The exact way to use backtracking can be varied. Try two variants and compare the number of function and gradient evaluations performed to convergence.
 
 ```{r echo= FALSE}
-steepestasc(c(-0.2,1))
-steepestasc(c(2,1))
+steepestasc_newalfa_1 <- function(x0, eps = 1e-5, alpha0 = 1) {
+  xt <- matrix(c(x0), nrow = 2)
+  conv <- c(999, 999)
+  i <- 0
+  func_evals <- 0
+  grad_evals <- 0
+  
+  while (sum(abs(conv)) > eps) {
+    alpha <- alpha0
+    xt1 <- xt[, i + 1]
+    xt_add <- xt1 + alpha * gradient(xt1)
+    grad_evals <- grad_evals + 1
+    
+    while (g(xt_add) < g(xt1)) {
+      alpha <- min((i + 1) / 999, alpha / 2)
+      xt_add <- xt1 + alpha * gradient(xt1)
+      func_evals <- func_evals + 1
+    }
+    
+    conv <- xt_add - xt1
+    xt <- cbind(xt, xt_add)
+    i <- i + 1
+  }
+  
+  cat('Steepest ascent method gives result', xt[, i + 1], 'at the', i, 'th iteration\n')
+  cat('Number of function evaluations:', func_evals, '\n')
+  cat('Number of gradient evaluations:', grad_evals, '\n')
+}
+
+steepestasc_newalfa_2 <- function(x0, eps = 1e-5, alpha0 = 1) {
+  xt <- matrix(c(x0), nrow = 2)
+  conv <- c(999, 999)
+  i <- 0
+  func_evals <- 0
+  grad_evals <- 0
+  
+  while (sum(abs(conv)) > eps) {
+    alpha <- alpha0
+    xt1 <- xt[, i + 1]
+    xt_add <- xt1 + alpha * gradient(xt1)
+    grad_evals <- grad_evals + 1
+    
+    while (g(xt_add) < g(xt1)) {
+      alpha <- alpha / sqrt(i + 5)
+      xt_add <- xt1 + alpha * gradient(xt1)
+      func_evals <- func_evals + 1
+    }
+    
+    conv <- xt_add - xt1
+    xt <- cbind(xt, xt_add)
+    i <- i + 1
+  }
+  
+  cat('Steepest ascent method gives result', xt[, i + 1], 'at the', i, 'th iteration\n')
+  cat('Number of function evaluations:', func_evals, '\n')
+  cat('Number of gradient evaluations:', grad_evals, '\n')
+}
+steepestasc(c(-0.2, 1))
+steepestasc_newalfa_1(c(-0.2,1))
+steepestasc_newalfa_2(c(-0.2, 1))
+
 ```
+As is shown, the last function has the fastest convergence speed at the 32 th iteration. when α is defined as min((i+1)/999, it has a quite small step and takes more times to convergence. When α*sqrt(i+5) is applied, the step decreases with the increasing of iteration number, which gives a quicker convergence. While α/2 is a good balance of accuracy and convergence speed.
 
 #### c. Use now the function `optim` with both the BFGS and the Nelder-Mead algorithm.Do you obtain the same results as for b.? Is there any difference in the precision of the result? Compare the number of function and gradient evaluations that are given in the standard output of `optim`.
 
-A: we get the different results for the BFGS and the Nelder-Mead algorithm.also the precision of the result is different. The number of function and gradient evaluations are different for the BFGS and the Nelder-Mead algorithm. the BFG is 147 and Nelder-Mead is 407, it seems that Nelder-Mead algorithm need more iterations to converge because lacking of the gradient information.
+A: we get the similar results for the BFGS and the Nelder-Mead algorithm and they are also very close to b. The number of function and gradient evaluations are different for the BFGS and the Nelder-Mead algorithm. the BFG is 147 and Nelder-Mead is 407, it seems that Nelder-Mead algorithm need more iterations to converge because lacking of the gradient information.
 
 ```{r echo= TRUE}
-model_BFGS<- optim(c(-0.2,1), g, gr=gradient, method='BFGS')
-print(model_BFGS)
-model_nelder<- optim(c(-0.2,1), g, method='Nelder-Mead')
-print(model_nelder)
+optim_result_bfgs <- optim(c(-0.2, 1), g, gradient, method = "BFGS", control = list(fnscale = -1))
+optim_result_nm <- optim(c(-0.2, 1), g, method = "Nelder-Mead", control = list(fnscale = -1))
+
+cat('BFGS result:', optim_result_bfgs$par, 'with', optim_result_bfgs$counts, 'function and gradient evaluations\n')
+cat('Nelder-Mead result:', optim_result_nm$par, 'with', optim_result_nm$counts, 'function evaluations\n')
 ```
 
 
