@@ -64,7 +64,7 @@ gibbs_sample <- function(n, w) {
     if (any(is.na(limits_x1))) break
     #sample between the lower and upper limits
     x1 <- runif(1, limits_x1[1], limits_x1[2])
-    # 更新X2 | X1
+    # fix X2 and update X2 | X1
     limits_x2 <- get_limits(x1, w, "x2")
     if (any(is.na(limits_x2))) break
     x2 <- runif(1, limits_x2[1], limits_x2[2])
@@ -109,14 +109,13 @@ gibbs_sample_transformed = function(n,w) {
   }
   return(samples_u)
 }
-# 生成样本并转换回X空间
+
 samples_u <- gibbs_sample_transformed(1000, 1.999)
 #browser()
 samples_x_transformed <- cbind(
   (samples_u[,1] + samples_u[,2]) / 2,
   (samples_u[,2] - samples_u[,1]) / 2
 )
-# 计算P(X1 > 0)
 plot(samples_x_transformed, pch = 20, col = rgb(0, 0, 1, 0.3), main = "Gibbs Samples")
 
 prob_u <- mean(samples_x_transformed[,1] > 0)
