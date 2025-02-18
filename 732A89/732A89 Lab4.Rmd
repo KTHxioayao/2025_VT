@@ -1,9 +1,17 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> 400fcf8e92ef15b07c749749641be09e8b77afc9
 ---
 title: "Lab 4 Group 8"
 output:
   pdf_document:
     latex_engine: lualatex
+<<<<<<< HEAD
 date: "2025-02-18"
+=======
+date: "2025-02-10"
+>>>>>>> 400fcf8e92ef15b07c749749641be09e8b77afc9
 author:
   - Liuxi Mei
   - Xiaochen Liu
@@ -12,6 +20,7 @@ author:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+<<<<<<< HEAD
 ## Question 1: Consider a random variable \(X\) with the following probability density function:
 \[ f(x) = 120x^5 e^{-x}, \quad x > 0 \]
 
@@ -258,6 +267,10 @@ cat("Chain 3: alpha =", alpha3, ", beta =", beta3, "\n")
 ## Question 2: Gibbs Sampling
 
 Let \(X = (X_1, X_2)\) be a bivariate distribution with density \(f(x_1, x_2) \propto 1\{x_1^2 + wx_1x_2 + x_2^2 < 1\}\) for some specific \(w\) with \(|w| < 2\). \(X\) has a uniform distribution on some two-dimensional region. We consider here the case \(w = 1.999\) (in Lecture 4, the case \(w = 1.8\) was shown).
+=======
+
+a)
+>>>>>>> 400fcf8e92ef15b07c749749641be09e8b77afc9
 ```{r}
 w  <- 1.999
 xv <- seq(-1, 1, by=0.01) * 1/sqrt(1-w^2/4)  # a range of x1-values, where the term below the root is non-negative (compare Lecture 4)
@@ -265,6 +278,7 @@ plot(xv, xv, type="n", xlab=expression(x[1]), ylab=expression(x[2]), las=1)
 # ellipse
 lines(xv, -(w/2)*xv-sqrt(1-(1-w^2/4)*xv^2), lwd=2, col=8)
 lines(xv, -(w/2)*xv+sqrt(1-(1-w^2/4)*xv^2), lwd=2, col=8)
+<<<<<<< HEAD
 ```
 
 
@@ -282,3 +296,107 @@ Discuss why the Gibbs sampling for this situation seems to be less successful fo
 
 ### Part e
 We might transform the variable \(X\) and generate \(U = (U_1, U_2) = (X_1 - X_2, X_1 + X_2)\) instead. In this case, the density of the transformed variable \(U = (U_1, U_2)\) is again a uniform distribution on a transformed region (no proof necessary for this claim). Determine the boundaries of the transformed region where \(U\) has a uniform distribution on. You can use that the transformation corresponds to \(X_1 = \frac{U_2 + U_1}{2}\) and \(X_2 = \frac{U_2 - U_1}{2}\) and set this into the boundaries in terms of \(X_i\). Plot the boundaries for \((U_1, U_2)\). Generate \(n = 1000\) random vectors with Gibbs sampling for \(U\) and plot them. Determine \(P(X_1 > 0) = P\left(\frac{U_2 + U_1}{2} > 0\right)\). Compare the results with Part c.
+=======
+
+
+```
+
+
+b) X1 | X2 :
+
+$$
+x_1 \mid x_2=\frac{-1.999 x_2 \pm \sqrt{\left(1.999 x_2\right)^2-4\left(x_2^2-1\right)}}{2}
+$$
+
+
+X2 | X1:
+$$
+x_2 \mid x_1=\frac{-1.999 x_1 \pm \sqrt{\left(1.999 x_1\right)^2-4\left(x_1^2-1\right)}}{2}
+$$
+c)
+```{r}
+get_limits <- function(fixed_val, w, var) {
+  a <- 1
+  b <- w * fixed_val
+  c_val <- fixed_val^2 - 1
+  discriminant <- b^2 - 4 * a * c_val
+  if (discriminant < 0) return(c(NA, NA))
+  sqrt_d <- sqrt(discriminant)
+  lower <- (-b - sqrt_d) / (2 * a)
+  upper <- (-b + sqrt_d) / (2 * a)
+  return(c(lower, upper))
+
+}
+
+gibbs_sample <- function(n, w) {
+  samples <- matrix(0, nrow = n, ncol = 2)
+  x1 <- 0
+  x2 <- 0
+  for (i in 1:n) {
+    #browser()
+    # fix X2 and update X1 | X2
+    limits_x1 <- get_limits(x2, w, "x1")
+    if (any(is.na(limits_x1))) break
+    #sample between the lower and upper limits
+    x1 <- runif(1, limits_x1[1], limits_x1[2])
+    # fix X2 and update X2 | X1
+    limits_x2 <- get_limits(x1, w, "x2")
+    if (any(is.na(limits_x2))) break
+    x2 <- runif(1, limits_x2[1], limits_x2[2])
+    samples[i, ] <- c(x1, x2)
+  }
+  return(samples)
+}
+set.seed(123)
+samples <- gibbs_sample(1000, 1.999)
+plot(samples, pch = 20, col = rgb(0, 0, 1, 0.3), main = "Gibbs Samples")
+
+prob <- mean(samples[,1] > 0)
+cat("Estimated P(X1 > 0):", prob)
+
+```
+
+d) from the plot above, we can see that x1 and x2 is highly correlated, The ellipse becomes extremely narrow compared to W = 1.8 and approaches a line. so the sample value could only in a very narrow range.
+
+
+
+
+e) Through variable conversion, the value range of X1 and X is broadened, the sampling efficiency is improved, and the estimation is closer to the true value，But because of w equals 1.999 which results in a slight asymmetry,so the actual value may be closer to 0.5
+```{r}
+
+
+gibbs_sample_transformed = function(n,w) {
+  samples_u = matrix(0, nrow = n, ncol = 2)
+  u1 <- 0
+  u2 <- 0
+  for (i in 1:n) {
+    # fix U2 and update U1 | U2
+    u2_current <- u2
+    u1_min <- -sqrt((4 - 3.999 * u2_current^2) / 0.001)
+    u1_max <- sqrt((4 - 3.999 * u2_current^2) / 0.001)
+    u1 <- runif(1, u1_min, u1_max)
+    # fix U1 and update U2 | U1
+    u1_current <- u1
+    u2_min <- -sqrt((4 - 0.001 * u1_current^2) / 3.999)
+    u2_max <- sqrt((4 - 0.001 * u1_current^2) / 3.999)
+    u2 <- runif(1, u2_min, u2_max)
+    samples_u[i, ] <- c(u1, u2)
+  }
+  return(samples_u)
+}
+
+samples_u <- gibbs_sample_transformed(1000, 1.999)
+#browser()
+samples_x_transformed <- cbind(
+  (samples_u[,1] + samples_u[,2]) / 2,
+  (samples_u[,2] - samples_u[,1]) / 2
+)
+plot(samples_x_transformed, pch = 20, col = rgb(0, 0, 1, 0.3), main = "Gibbs Samples")
+
+prob_u <- mean(samples_x_transformed[,1] > 0)
+cat("Transformed P(X1 > 0):", prob_u) 
+  
+```
+
+
+>>>>>>> 400fcf8e92ef15b07c749749641be09e8b77afc9
