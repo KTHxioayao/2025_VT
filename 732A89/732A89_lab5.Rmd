@@ -162,15 +162,17 @@ where:
 
 ## R Implementation
 
-```{r}
+```{r echo=TRUE}
 # Define the inverse transformation function for the Gumbel distribution
 gumbel_inverse <- function(u, mu) {
   c <- log(log(2))
   x <- -log(-log(u)) + mu + c
   return(x)
 }
-x <- seq(0,10, length.out=100)
-y <- gumbel_inverse(x,2)
+set.seed(123)
+x <- runif(10000)
+y <- gumbel_inverse(x, mu=0)
+hist(y)
 ```
 
 ### Part b
@@ -180,3 +182,34 @@ y <- gumbel_inverse(x,2)
 **Plot the power curve (i.e., power versus** $\mu$**).**
 
 For the Sign test, you might use, e.g., the function `SIGN.test` in the package `BSDA`; or alternatively, the function `binom.test` might be used when applied to the number of positive observations.
+```{r echo=TRUE}
+#install.packages('BSDA')
+library(BSDA)
+s <- 10000
+n <- 13
+
+mu <- seq (0, 2, length.out = 100)
+power_values <- numeric(length(mu))
+
+set.seed(123) 
+
+for (i in 1:length(mu))  {
+  count <- 0
+  for (j in 1:s) {
+    
+    x <- runif(13)
+    y <- gumbel_inverse(x, mu = mu[i])
+    p <- SIGN.test(y, alternative = "greater")$p.value
+    reject <- (p < 0.05)
+    count <- count + reject
+  }
+  power_values[i] <- count / s
+  
+}
+
+plot(mu, power_values, type = "b", pch = 16, col = "blue",
+     xlab = expression(mu), ylab = "Power", main = "Power Curve of the Sign Test")
+abline(h = 0.05, lty = 2, col = "red")  # Reference line at alpha = 0.05
+
+```
+We used 100 grid for mu value and 10000 repetitions so that we decrease the randomness from each repetition and also make the plit easy to understand.  
