@@ -18,14 +18,204 @@ knitr::opts_chunk$set(echo = TRUE)
 
 **In the lecture, an EM algorithm was presented for the case of a univariate normal mixture model with two components; you can find it also in the file emalg.r on the course homepage.**
 
-**a. Use the algorithm from the lecture as start and modify it for the case of three components, i.e. the mixture of three normal distributions. Important: Use this provided algorithm to start with and generalize it; do not write completely new code.**
+**a.  Use the algorithm from the lecture as start and modify it for the case of three components, i.e. the mixture of three normal distributions. Important: Use this provided algorithm to start with and generalize it; do not write completely new code.**
 
-**b. Modify the stopping criterion such that the stopping does not depend on a scaling of data. This means that if data in another unit is analyzed, for example if numbers are multiplied or divided by 1000, the results after stopping should be the same.**
+```{r echo=TRUE}
 
-**c. Use the data dat3p in threepops.Rdata on the course homepage which contains n = 230 observa-tions. Create first a histogram of the data. Fit then a normal mixture model with three componentsusing your program from the a. and b. parts. Which estimates do you get for the model parameters?**
 
-**d. Provide plots of current estimates for each model parameter versus the iteration-number. Do they support that convergence has been achieved for each parameter?**
+emalg <- function(dat, eps=0.000001){
+  n      <- length(dat)
+  pi     <- rep(NA, n)         # initialize vector for prob. to belong to group 1  
+  pj     <- rep(NA, n)
+  # define reasonable starting values for parameters; here based on summary statistics for total dataset
+  p1      <- 0.5
+  p2      <-0.25
+  p3      <-1- p1- p2
+  # starting value for mixing parameter 
+  sigma1 <- sd(dat)*1/3        # starting value for standard deviation in group taken as 1/3 of total sd
+  sigma2 <- sigma1
+  sigma3 <- sigma1
+  mu1    <- mean(dat)-sigma1/3 # starting values for means, taken a bit lower and a bit higher than overall mean
+  mu2    <- mean(dat)+sigma1/3
+  mu3    <- mean(dat)
+  #initialize parameters
+  trace <- list(p1 = c(), p2 = c(), p3 = c(), 
+                mu1 = c(), mu2 = c(), mu3 = c(), 
+                sigma1 = c(), sigma2 = c(), sigma3 = c())
 
+  pv     <- c(p1,p2,p3, mu1, mu2, mu3, sigma1, sigma2, sigma3)  # parameter vector
+
+  cc     <- eps + 100  
+  iter <- 0
+# initialize convergence criterion to avoid stopping the while-loop directly 
+  while (cc>eps){
+    pv1  <- pv                 # save previous parameter vector
+    ### E step ###
+    for (j in 1:n){
+      pi1   <- p1*dnorm(dat[j], mean=mu1, sd=sigma1)
+      pi2   <- p2*dnorm(dat[j], mean=mu2, sd=sigma2)
+      pi3   <- p3*dnorm(dat[j], mean=mu3, sd=sigma3)
+      pi[j] <- pi1/(pi1+pi2+pi3)
+      pj[j] <- pi2/(pi1+pi2+pi3)
+    }
+    ### M step ###
+
+    p1      <- mean(pi)
+    p2      <- mean(pj)
+    mu1    <- sum(pi*dat)/(p1*n)
+    mu2    <- sum(pj*dat)/(p2*n)
+    mu3    <- sum((1-pi-pj)*dat)/((1-p1-p2)*n)
+    sigma1 <- sqrt(sum(pi*(dat-mu1)*(dat-mu1)/(p1*n)))
+    sigma2 <- sqrt(sum(pj*(dat-mu2)*(dat-mu2)/(p2*n)))
+    sigma3 <- sqrt(sum((1-pi-pj)*(dat-mu3)*(dat-mu3)/((1-p1-p2)*n)))
+    ######
+     # update parameters
+    trace$p1 <- c(trace$p1, p1)
+    trace$p2 <- c(trace$p2, p2)
+    trace$p3 <- c(trace$p3, 1 - p1 - p2)
+    trace$mu1 <- c(trace$mu1, mu1)
+    trace$mu2 <- c(trace$mu2, mu2)
+    trace$mu3 <- c(trace$mu3, mu3)
+    trace$sigma1 <- c(trace$sigma1, sigma1)
+    trace$sigma2 <- c(trace$sigma2, sigma2)
+    trace$sigma3 <- c(trace$sigma3, sigma3)
+    
+    pv     <- c(p1,p2,1-p1-p2, mu1, mu2, mu3, sigma1, sigma2, sigma3)
+    cc     <- t(pv-pv1)%*%(pv-pv1)  # a convergence criterion, maybe not the best one
+    iter <- iter + 1
+
+  }
+   return(list(parameters = pv, trace = trace))
+}
+# example data and run of the algorithm
+data <- c(0.1, 0.5, 0.7, 1.1, 2.5, 3.4, 3.5, 3.9, 4.0)
+emalg(data)$ parameters
+
+
+```
+**b.  Modify the stopping criterion such that the stopping does not depend on a scaling of data. This means that if data in another unit is analyzed, for example if numbers are multiplied or divided by 1000, the results after stopping should be the same.**
+```{r echo=TRUE}
+
+emalg2 <- function(dat, eps=0.000001){
+  n      <- length(dat)
+  pi     <- rep(NA, n)         # initialize vector for prob. to belong to group 1  
+  pj     <- rep(NA, n)
+  # define reasonable starting values for parameters; here based on summary statistics for total dataset
+  p1      <- 0.5
+  p2      <-0.25
+  p3      <-1- p1- p2
+  # starting value for mixing parameter 
+  sigma1 <- sd(dat)*1/3        # starting value for standard deviation in group taken as 1/3 of total sd
+  sigma2 <- sigma1
+  sigma3 <- sigma1
+  mu1    <- mean(dat)-sigma1/3 # starting values for means, taken a bit lower and a bit higher than overall mean
+  mu2    <- mean(dat)+sigma1/3
+  mu3    <- mean(dat)
+  #initialize parameters
+  trace2 <- list(p1 = c(), p2 = c(), p3 = c(), 
+                mu1 = c(), mu2 = c(), mu3 = c(), 
+                sigma1 = c(), sigma2 = c(), sigma3 = c())
+
+  pv     <- c(p1,p2,p3, mu1, mu2, mu3, sigma1, sigma2, sigma3)  # parameter vector
+
+  cc     <- eps + 100  
+  iter <- 0
+# initialize convergence criterion to avoid stopping the while-loop directly 
+  while (cc>eps){
+    pv1  <- pv                 # save previous parameter vector
+    ### E step ###
+    for (j in 1:n){
+      pi1   <- p1*dnorm(dat[j], mean=mu1, sd=sigma1)
+      pi2   <- p2*dnorm(dat[j], mean=mu2, sd=sigma2)
+      pi3   <- p3*dnorm(dat[j], mean=mu3, sd=sigma3)
+      pi[j] <- pi1/(pi1+pi2+pi3)
+      pj[j] <- pi2/(pi1+pi2+pi3)
+    }
+    ### M step ###
+
+    p1      <- mean(pi)
+    p2      <- mean(pj)
+    mu1    <- sum(pi*dat)/(p1*n)
+    mu2    <- sum(pj*dat)/(p2*n)
+    mu3    <- sum((1-pi-pj)*dat)/((1-p1-p2)*n)
+    sigma1 <- sqrt(sum(pi*(dat-mu1)*(dat-mu1)/(p1*n)))
+    sigma2 <- sqrt(sum(pj*(dat-mu2)*(dat-mu2)/(p2*n)))
+    sigma3 <- sqrt(sum((1-pi-pj)*(dat-mu3)*(dat-mu3)/((1-p1-p2)*n)))
+    ######
+     # update parameters
+    trace2$p1 <- c(trace2$p1, p1)
+    trace2$p2 <- c(trace2$p2, p2)
+    trace2$p3 <- c(trace2$p3, 1 - p1 - p2)
+    trace2$mu1 <- c(trace2$mu1, mu1)
+    trace2$mu2 <- c(trace2$mu2, mu2)
+    trace2$mu3 <- c(trace2$mu3, mu3)
+    trace2$sigma1 <- c(trace2$sigma1, sigma1)
+    trace2$sigma2 <- c(trace2$sigma2, sigma2)
+    trace2$sigma3 <- c(trace2$sigma3, sigma3)
+    
+    pv     <- c(p1,p2,1-p1-p2, mu1, mu2, mu3, sigma1, sigma2, sigma3)
+    cc     <- t(pv-pv1)%*%(pv-pv1)  # a convergence criterion, maybe not the best one
+    iter <- iter + 1
+
+  }
+   return(list(parameters = pv, trace2 = trace2))
+}
+
+data <- c(0.1, 0.5, 0.7, 1.1, 2.5, 3.4, 3.5, 3.9, 4.0)
+emalg2(data)$ parameters
+```
+
+
+**c.  Use the data dat3p in threepops.Rdata on the course homepage which contains n = 230 observa- tions. Create first a histogram of the data. Fit then a normal mixture model with three components using your program from the a. and b. parts. Which estimates do you get for the model parameters?**
+
+```{r echo=TRUE}
+
+get(load('threepops.Rdata'))
+hist(dat3p, breaks=20, probability=TRUE, main="Histogram of dat3p", xlab="Data", col="lightblue")
+
+para1 <- emalg(dat3p)
+para2 <-emalg2(dat3p)
+
+# Print the estimated parameters
+cat("Results from emalg (original stopping criterion):\n")
+print(para1)
+
+cat("\nResults from emalg2 (scale-invariant stopping criterion):\n")
+print(para2)
+
+```
+
+**d.  Provide plots of current estimates for each model parameter versus the iteration-number. Do they support that convergence has been achieved for each parameter?**
+```{r echo=TRUE}
+# Plot convergence
+par(mfrow = c(3, 3))  # Create a 3x3 grid for plots
+plot(emalg(data)$trace$p1, type="l", main="p1 over iterations", xlab="Iteration", ylab="p1")
+plot(emalg(data)$trace$p2, type="l", main="p2 over iterations", xlab="Iteration", ylab="p2")
+plot(emalg(data)$trace$p3, type="l", main="p3 over iterations", xlab="Iteration", ylab="p3")
+plot(emalg(data)$trace$mu1, type="l", main="mu1 over iterations", xlab="Iteration", ylab="mu1")
+plot(emalg(data)$trace$mu2, type="l", main="mu2 over iterations", xlab="Iteration", ylab="mu2")
+plot(emalg(data)$trace$mu3, type="l", main="mu3 over iterations", xlab="Iteration", ylab="mu3")
+plot(emalg(data)$trace$sigma1, type="l", main="sigma1 over iterations", xlab="Iteration", ylab="sigma1")
+plot(emalg(data)$trace$sigma2, type="l", main="sigma2 over iterations", xlab="Iteration", ylab="sigma2")
+plot(emalg(data)$trace$sigma3, type="l", main="sigma3 over iterations", xlab="Iteration", ylab="sigma3")
+
+```
+
+```{r echo=TRUE}
+# Plot convergence
+par(mfrow = c(3, 3))  # Create a 3x3 grid for plots
+plot(emalg2(data)$trace2$p1, type="l", main="p1 over iterations", xlab="Iteration", ylab="p1")
+plot(emalg2(data)$trace2$p2, type="l", main="p2 over iterations", xlab="Iteration", ylab="p2")
+plot(emalg2(data)$trace2$p3, type="l", main="p3 over iterations", xlab="Iteration", ylab="p3")
+plot(emalg2(data)$trace2$mu1, type="l", main="mu1 over iterations", xlab="Iteration", ylab="mu1")
+plot(emalg2(data)$trace2$mu2, type="l", main="mu2 over iterations", xlab="Iteration", ylab="mu2")
+plot(emalg2(data)$trace2$mu3, type="l", main="mu3 over iterations", xlab="Iteration", ylab="mu3")
+plot(emalg2(data)$trace2$sigma1, type="l", main="sigma1 over iterations", xlab="Iteration", ylab="sigma1")
+plot(emalg2(data)$trace2$sigma2, type="l", main="sigma2 over iterations", xlab="Iteration", ylab="sigma2")
+plot(emalg2(data)$trace2$sigma3, type="l", main="sigma3 over iterations", xlab="Iteration", ylab="sigma3")
+
+
+```
 
 ## Question 2: Simulated annealing
 
@@ -33,8 +223,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 **The bank wants to investigate how the willingness to agree to the bank’s offer depends on the client’s age and their account balance. To obtain a first idea about the dependence, 22 clients of these 4364 should be contacted. The bank wants to have a good spread in age and balance in the subsample. Therefore, the bank wants to select the 22 clients in the following way: For each client, we compute the minimal distance to one of the 22 selected clients, where we use the Euclidean distance in the two-dimensional feature space. The sum of these minimal distances for all clients should be minimized. A function crit is available in the file bankcrit.r on the course homepage which calculates this sum of minimal distances and which you can use.**
 
-**a. Plot the data, select randomly 22 clients and mark them in the plot (this should be your starting subsample for the algorithm in b.).**
+**a.  Plot the data, select randomly 22 clients and mark them in the plot (this should be your starting subsample for the algorithm in b.).**
 
-**b. Program your own simulated annealing algorithm to minimize the criterion function. Think about how to select candidates based on the current subset: To ensure that you always have subsets with 22 clients, you might remove and add equally many clients to create the next candidate subset (this means, think about exchanging individuals).**
+**b.  Program your own simulated annealing algorithm to minimize the criterion function. Think about how to select candidates based on the current subset: To ensure that you always have subsets with 22 clients, you might remove and add equally many clients to create the next candidate subset (this means, think about exchanging individuals).**
 
-**c. Investigate several cooling schedules, starting temperatures, and number of iterations for the simu- lated annealing algorithm. Discuss at least two combinations of schedules+temperatures+iterations in your report (for example, a good and a bad choice). Compare plots of the criterion-value versus the iteration number. Show also plots of the data with the clients in the final subset marked.**
+**c.  Investigate several cooling schedules, starting temperatures, and number of iterations for the simu- lated annealing algorithm. Discuss at least two combinations of schedules+temperatures+iterations in your report (for example, a good and a bad choice). Compare plots of the criterion-value versus the iteration number. Show also plots of the data with the clients in the final subset marked.**
