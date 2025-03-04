@@ -18,7 +18,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 **In the lecture, an EM algorithm was presented for the case of a univariate normal mixture model with two components; you can find it also in the file emalg.r on the course homepage.**
 
-**a.  Use the algorithm from the lecture as start and modify it for the case of three components, i.e. the mixture of three normal distributions. Important: Use this provided algorithm to start with and generalize it; do not write completely new code.**
+**a. Use the algorithm from the lecture as start and modify it for the case of three components, i.e. the mixture of three normal distributions. Important: Use this provided algorithm to start with and generalize it; do not write completely new code.**
 
 ```{r echo=TRUE}
 
@@ -93,7 +93,11 @@ emalg(data)$ parameters
 
 
 ```
-**b.  Modify the stopping criterion such that the stopping does not depend on a scaling of data. This means that if data in another unit is analyzed, for example if numbers are multiplied or divided by 1000, the results after stopping should be the same.**
+
+**b. Modify the stopping criterion such that the stopping does not depend on a scaling of data. This means that if data in another unit is analyzed, for example if numbers are multiplied or divided by 1000, the results after stopping should be the same.**
+
+The convergence criteria is changed as follow: $$\frac{|p_v^{new} - p_v^{old}|}{|p_v^{old}|} < \epsilon$$
+
 ```{r echo=TRUE}
 
 emalg2 <- function(dat, eps=0.000001){
@@ -154,7 +158,7 @@ emalg2 <- function(dat, eps=0.000001){
     trace2$sigma3 <- c(trace2$sigma3, sigma3)
     
     pv     <- c(p1,p2,1-p1-p2, mu1, mu2, mu3, sigma1, sigma2, sigma3)
-    cc     <- t(pv-pv1)%*%(pv-pv1)  # a convergence criterion, maybe not the best one
+    cc     <- max((pv-pv1)/(pv1))  # a convergence criterion, maybe not the best one
     iter <- iter + 1
 
   }
@@ -165,16 +169,15 @@ data <- c(0.1, 0.5, 0.7, 1.1, 2.5, 3.4, 3.5, 3.9, 4.0)
 emalg2(data)$ parameters
 ```
 
-
-**c.  Use the data dat3p in threepops.Rdata on the course homepage which contains n = 230 observa- tions. Create first a histogram of the data. Fit then a normal mixture model with three components using your program from the a. and b. parts. Which estimates do you get for the model parameters?**
+**c. Use the data dat3p in threepops.Rdata on the course homepage which contains n = 230 observa- tions. Create first a histogram of the data. Fit then a normal mixture model with three components using your program from the a. and b. parts. Which estimates do you get for the model parameters?**
 
 ```{r echo=TRUE}
 
 get(load('threepops.Rdata'))
 hist(dat3p, breaks=20, probability=TRUE, main="Histogram of dat3p", xlab="Data", col="lightblue")
 
-para1 <- emalg(dat3p)
-para2 <-emalg2(dat3p)
+para1 <- emalg(dat3p)$parameter
+para2 <-emalg2(dat3p)$parameter
 
 # Print the estimated parameters
 cat("Results from emalg (original stopping criterion):\n")
@@ -185,7 +188,9 @@ print(para2)
 
 ```
 
-**d.  Provide plots of current estimates for each model parameter versus the iteration-number. Do they support that convergence has been achieved for each parameter?**
+**d. Provide plots of current estimates for each model parameter versus the iteration-number. Do they support that convergence has been achieved for each parameter?**
+
+As is shown from the plots, the curves for parameters from both methods seem to stabilize at some level with the increasing of iteration number. Therefore, we think convergences have been reached for each paramters. 
 ```{r echo=TRUE}
 # Plot convergence
 par(mfrow = c(3, 3))  # Create a 3x3 grid for plots
@@ -205,7 +210,7 @@ plot(emalg(data)$trace$sigma3, type="l", main="sigma3 over iterations", xlab="It
 # Plot convergence
 par(mfrow = c(3, 3))  # Create a 3x3 grid for plots
 plot(emalg2(data)$trace2$p1, type="l", main="p1 over iterations", xlab="Iteration", ylab="p1")
-plot(emalg2(data)$trace2$p2, type="l", main="p2 over iterations", xlab="Iteration", ylab="p2")
+plot(emalg2(data)$trace2$p2, type="l", main="p2 over iterations",  xlab="Iteration", ylab="p2")
 plot(emalg2(data)$trace2$p3, type="l", main="p3 over iterations", xlab="Iteration", ylab="p3")
 plot(emalg2(data)$trace2$mu1, type="l", main="mu1 over iterations", xlab="Iteration", ylab="mu1")
 plot(emalg2(data)$trace2$mu2, type="l", main="mu2 over iterations", xlab="Iteration", ylab="mu2")
@@ -223,8 +228,8 @@ plot(emalg2(data)$trace2$sigma3, type="l", main="sigma3 over iterations", xlab="
 
 **The bank wants to investigate how the willingness to agree to the bank’s offer depends on the client’s age and their account balance. To obtain a first idea about the dependence, 22 clients of these 4364 should be contacted. The bank wants to have a good spread in age and balance in the subsample. Therefore, the bank wants to select the 22 clients in the following way: For each client, we compute the minimal distance to one of the 22 selected clients, where we use the Euclidean distance in the two-dimensional feature space. The sum of these minimal distances for all clients should be minimized. A function crit is available in the file bankcrit.r on the course homepage which calculates this sum of minimal distances and which you can use.**
 
-**a.  Plot the data, select randomly 22 clients and mark them in the plot (this should be your starting subsample for the algorithm in b.).**
+**a. Plot the data, select randomly 22 clients and mark them in the plot (this should be your starting subsample for the algorithm in b.).**
 
-**b.  Program your own simulated annealing algorithm to minimize the criterion function. Think about how to select candidates based on the current subset: To ensure that you always have subsets with 22 clients, you might remove and add equally many clients to create the next candidate subset (this means, think about exchanging individuals).**
+**b. Program your own simulated annealing algorithm to minimize the criterion function. Think about how to select candidates based on the current subset: To ensure that you always have subsets with 22 clients, you might remove and add equally many clients to create the next candidate subset (this means, think about exchanging individuals).**
 
-**c.  Investigate several cooling schedules, starting temperatures, and number of iterations for the simu- lated annealing algorithm. Discuss at least two combinations of schedules+temperatures+iterations in your report (for example, a good and a bad choice). Compare plots of the criterion-value versus the iteration number. Show also plots of the data with the clients in the final subset marked.**
+**c. Investigate several cooling schedules, starting temperatures, and number of iterations for the simu- lated annealing algorithm. Discuss at least two combinations of schedules+temperatures+iterations in your report (for example, a good and a bad choice). Compare plots of the criterion-value versus the iteration number. Show also plots of the data with the clients in the final subset marked.**
