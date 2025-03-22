@@ -78,7 +78,7 @@ secant <- function (x1, x0) {
 
 res <- secant (0.1, 1)
 
-
+#sss
 
 # Q2
 myvar <- function (vector) {
