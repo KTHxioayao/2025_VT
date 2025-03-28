@@ -86,8 +86,6 @@ By looking into the first 100 samples, we found that X-value start to stabilize 
 
 ### Part b
 
-**Perform Part a by using the chi-square distribution** $\chi^2(\lfloor X_t + 1 \rfloor)$ **as a proposal distribution, where** $\lfloor x \rfloor$ **is the floor function, meaning the integer part of** $x$ **for positive** $x$**, i.e.** $\lfloor 2.95 \rfloor = 2$**.**
-
 ```{r echo=FALSE}
 
 prop_dis2<- function (x,xt) {
@@ -169,7 +167,7 @@ for (i in 1:10000)
 
   }
     
-  chain3 <- rbind(chain, x)
+  chain3 <- rbind(chain3, x)
 }
 head(chain3,10)  # each row is one two-dimensional observation
 
@@ -333,6 +331,7 @@ cat("Estimated P(X1 > 0):", prob)
 
 ```
 
+
 ### Part d
 
 **Discuss, why the Gibbs sampling for this situation seems to be less successful for w = 1.999 compared to the case w = 1.8 from the lecture.**
@@ -392,9 +391,8 @@ cat("Transformed P(X1 > 0):", prob_u)
   
 ```
 
-
 ```{r eval = FALSE}
-#Assig 1
+#Assig 1 
 #a
 prop_dis <- function (xt) {
   return(rnorm(1, xt, 0.1))
@@ -678,4 +676,3 @@ prob_u <- mean(samples_x_transformed[, 1] > 0)
 cat("Transformed P(X1 > 0):", prob_u)
 
 ```
-
