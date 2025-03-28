@@ -58,7 +58,8 @@ model_new <- lm(yield ~ I(concentration^2)+ I(concentration^3), data=data)
 coef_intervals<- confint(model_new, level = 0.95)
 
 # Print the 95% confidence interval for the second coefficient
-cat("95% Confidence Interval for the coefficient of I(concentration^2):", coef_intervals[2, ], "\n")
+cat("95% Confidence Interval for the coefficient of I(concentration^2):", 
+    coef_intervals[2, ], "\n")
 
 plot(data$concentration , data$yield) # Create a plot
 
@@ -116,7 +117,8 @@ The results from 3 methods are summarized as follow. The results from manual boo
 ```{r echo=TRUE}
 # Create a data frame with the results
 results <- data.frame(
-  Method = c("Standard lm Confidence Interval","Manual Bootstrap Method", "Bootstrap using boot package (Percentile)" ),
+  Method = c("Standard lm Confidence Interval","Manual Bootstrap Method", 
+             "Bootstrap using boot package (Percentile)" ),
   `95% Confidence Interval` = c(
     paste(coef_intervals[2,], collapse = ", "),
      paste(ci95, collapse = ", "),
@@ -126,7 +128,8 @@ results <- data.frame(
 )
 
 # Print the table using knitr::kable
-knitr::kable(results, col.names = c("Method", "95% Confidence Interval for β2 (Coefficient of I(concentration^2))"))
+knitr::kable(results, col.names = c("Method", "95% Confidence Interval for 
+                                    β2 (Coefficient of I(concentration^2))"))
 ```
 
 ## Question 2: Simulation of power curves
@@ -212,4 +215,124 @@ plot(mu, power_values, type = "b", pch = 16, col = "blue",
 abline(h = 0.05, lty = 2, col = "red")  # Reference line at alpha = 0.05
 
 ```
-We used 100 grid for mu value and 10000 repetitions so that we decrease the randomness from each repetition and also make the plit easy to understand.  
+The precision of the estimated power increases with the number of repetitions. Since we have a significant level (α=0.05), 10,000 repetitions is applied to ensure a good precision and we have stable and reliable estimated power generated, reducing the standard error of the estimate.  
+
+# Appendix 
+```{r eval=FALSE}
+#Assignment 1 
+data <- read.csv('kresseertrag.dat', header= FALSE)
+# Split column names and keep only the first three parts
+# Load necessary library
+#install.packages('tidyr')
+#install.package('boot')
+library(tidyr)
+library(boot)
+
+# Use separate() from tidyr to split the column into three parts
+data <- separate(data, col = V1, into = c("Col1", "Col2", "concentration",'yield'), sep = "\\s+")
+
+data[] <- lapply(data, as.numeric)
+data <- data[,c(3,4)]
+# Fit a cubic regression model
+model <- lm(yield ~ concentration+ I(concentration^2)+ I(concentration^3), data=data)
+
+summary(model)
+
+model_new <- lm(yield ~ I(concentration^2)+ I(concentration^3), data=data)
+
+coef_intervals<- confint(model_new, level = 0.95)
+
+# Print the 95% confidence interval for the second coefficient
+cat("95% Confidence Interval for the coefficient of I(concentration^2):", 
+    coef_intervals[2, ], "\n")
+
+plot(data$concentration , data$yield) # Create a plot
+
+# Add the regression curve
+x <- seq(min(data$concentration), max(data$concentration), length.out = 100)
+y <- predict(model, newdata = data.frame(concentration = x))
+lines(x, y, col = "blue")
+
+res <- c()
+bo<- 10000
+set.seed(123)
+for (i in 1:bo) {
+  x <-sample(dim(data)[1],size = dim(data)[1], replace = TRUE)
+  cm <- lm(yield~I(concentration^2)+ I(concentration^3), data=data[x,])
+  res <-  c(res, as.numeric(coef(cm)[2]))
+}
+
+
+hist(res)
+ress <- sort(res)
+ci95 <- c(ress[round(bo*0.025)], ress[round(bo*0.975)])
+# Print the 95% confidence interval
+cat("95% Confidence Interval for the coefficient of I(concentration^2):", ci95, "\n")
+
+cmslope <- function(data, i){
+cm <- lm(yield~I(concentration^2)+ I(concentration^3), subset=i, data=data)
+coef(cm)[2]
+}
+
+set.seed(123)
+cb <- boot(data, cmslope, R=10000)
+ci <-boot.ci(cb, type="perc")
+# Print the result
+cat("95% Confidence Interval for the slope:", ci$percent[4:5], "\n")
+
+# Create a data frame with the results
+results <- data.frame(
+  Method = c("Standard lm Confidence Interval","Manual Bootstrap Method", 
+             "Bootstrap using boot package (Percentile)" ),
+  `95% Confidence Interval` = c(
+    paste(coef_intervals[2,], collapse = ", "),
+     paste(ci95, collapse = ", "),
+    paste(ci$percent[4:5], collapse = ", ")
+   
+  )
+)
+
+# Print the table using knitr::kable
+knitr::kable(results, col.names = c("Method", "95% Confidence Interval for 
+                                    β2 (Coefficient of I(concentration^2))"))
+
+#assignment 2
+gumbel_inverse <- function(u, mu) {
+  c <- log(log(2))
+  x <- -log(-log(u)) + mu + c
+  return(x)
+}
+set.seed(123)
+x <- runif(10000)
+y <- gumbel_inverse(x, mu=0)
+hist(y)
+
+install.packages('BSDA')
+library(BSDA)
+s <- 10000
+n <- 13
+
+mu <- seq (0, 2, length.out = 100)
+power_values <- numeric(length(mu))
+
+set.seed(123) 
+
+for (i in 1:length(mu))  {
+  count <- 0
+  for (j in 1:s) {
+    
+    x <- runif(13)
+    y <- gumbel_inverse(x, mu = mu[i])
+    p <- SIGN.test(y, alternative = "greater")$p.value
+    reject <- (p < 0.05)
+    count <- count + reject
+  }
+  power_values[i] <- count / s
+  
+}
+
+plot(mu, power_values, type = "b", pch = 16, col = "blue",
+     xlab = expression(mu), ylab = "Power", main = "Power Curve of the Sign Test")
+abline(h = 0.05, lty = 2, col = "red")  # Reference line at alpha = 0.05
+```
+

@@ -82,10 +82,9 @@ res <- secant (0.1, 1)
 
 # Q2
 myvar <- function (vector) {
-
-    N <- length(vector)
-res <- 1 / (N - 1) * ((sum(vector^2)) - 1 / n * sum(vector)^2)
-return(res)
+  N <- length(vector)
+  res <- 1 / (N - 1) * ((sum(vector^2)) - 1 / n * sum(vector)^2)
+  return(res)
 }
 
-x<- rnorm(10000, 1e8, 1)
+x <- rnorm(10000, 1e8, 1)
