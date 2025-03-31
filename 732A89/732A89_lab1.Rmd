@@ -147,7 +147,7 @@ for (i in 1:nrow(values)) {
 
 ```
 
-Bisection method gives correct values while g'(a) and g'(b) have g'(a)\*g'(b)\<0. But when both of them have positive or negative value, the method doesn't work even if the true root is in this range. When appropriate range is chose, it can always find a root.  
+Bisection method gives correct values while g'(a) and g'(b) have g'(a)\*g'(b)\<0. But when both of them have positive or negative value, the method doesn't work even if the true root is in this range. When appropriate range is chose, it can always find a root.
 
 ```{r echo=FALSE}
 values<- matrix (c(0.1,4,
@@ -169,7 +169,7 @@ Secant method requires the intersection of extensions of points g'(x) and g'(x+1
 
 ### f) When you just should program one of them: Would you use bisection or secant, here? In general, for another function g(x) to be maximized: When would you switch and use the other algorithm?
 
-Bisection method is preferred here as it is easier to program and understand in this simple situation. However, for more complicated question, secant method is better than bisection method as it converges quicker. 
+Bisection method is preferred here as it is easier to program and understand in this simple situation. However, for more complicated question, secant method is better than bisection method as it converges quicker.
 
 ## Question 2: Computer arithmetics (variance)
 
@@ -195,7 +195,7 @@ myvar = function(x_i) {
 }
 ```
 
-### b)Generate a vector x = (x1, . . . , x10000) with 10000 random numbers with mean 10^8 and variance 1
+### b)Generate a vector x = (x1, . . . , x10000) with 10000 random numbers with mean 10\^8 and variance 1
 
 ```{r}
 set.seed(1234)
@@ -239,22 +239,14 @@ $$
 
 ```{r}
 
-variance_Welford = function(x_i) {
-    n = length(x_i)
-    if (n == 1){
-      return(c(0))
-    }
-    M = 0
-    S = 0
-    for (i in 1:n) {
-        M = M + (x_i[i] - M) / i
-        S = S + (x_i[i] - M) * (x_i[i] - M)
-    }
-    res = S / (n - 1)
-    return(res)
+myvar_optimized <- function(x) {
+  n <- length(x)
+  mean_x <- mean(x)
+  variance <- sum((x - mean_x)^2) / (n - 1)
+  return(variance)
 }
 
-print(variance_Welford(x))
+print(myvar_optimized(x))
 
 print(var(x))
 ```
@@ -401,7 +393,7 @@ for (i in 1:nrow(values)) {
     
     #b)
     set.seed(1234)
-x = rnorm(10000, mean = 108, sd = 1)
+x = rnorm(10000, mean = 10^8, sd = 1)
 
 #c)
 compute_difference = function(Xi) {
@@ -425,22 +417,14 @@ compute_difference(x)
 
 #d)
 
-variance_Welford = function(x_i) {
-    n = length(x_i)
-    if (n == 1){
-      return(c(0))
-    }
-    M = 0
-    S = 0
-    for (i in 1:n) {
-        M = M + (x_i[i] - M) / i
-        S = S + (x_i[i] - M) * (x_i[i] - M)
-    }
-    res = S / (n - 1)
-    return(res)
+myvar_optimized <- function(x) {
+  n <- length(x)
+  mean_x <- mean(x)
+  variance <- sum((x - mean_x)^2) / (n - 1)
+  return(variance)
 }
 
-print(variance_Welford(x))
+print(myvar_optimized(x))
 
 print(var(x))
 
