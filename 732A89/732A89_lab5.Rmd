@@ -215,7 +215,27 @@ plot(mu, power_values, type = "b", pch = 16, col = "blue",
 abline(h = 0.05, lty = 2, col = "red")  # Reference line at alpha = 0.05
 
 ```
-The precision of the estimated power increases with the number of repetitions. Since we have a significant level (α=0.05), 10,000 repetitions is applied to ensure a good precision and we have stable and reliable estimated power generated, reducing the standard error of the estimate.  
+
+The precision of the estimated power increases with the number of repetitions. 
+The variance of the count is calculated as follow:
+$$
+\text{Var(count}_s) = \frac{p(1 - p)}{s}
+$$
+
+Thus, standard deviation is calculated: 
+
+$$
+\text{sd(count}_s) = \sqrt{\frac{p(1 - p)}{s}}
+$$
+
+Since we have a significant level (α=0.05), 10000 repetitions, standard deviation is：
+
+$$
+\sqrt{\frac{0.05 \times (1 - 0.05)}{s}} \approx 0.0007
+$$
+
+which gives a quite small variance, indicating  a stable and reliable estimated power generated when we choose 10000 as repetitions number. 
+
 
 # Appendix 
 ```{r eval=FALSE}
