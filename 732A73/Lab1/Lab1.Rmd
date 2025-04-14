@@ -1,0 +1,15 @@
+---
+title: "EM algorithm and simulated annealing"
+output:
+  pdf_document:
+    latex_engine: lualatex
+date: "2025-03-03"
+author:
+  - Liuxi Mei
+  - Xiaochen Liu
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
