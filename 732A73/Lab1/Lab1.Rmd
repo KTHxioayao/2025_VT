@@ -1,9 +1,9 @@
 ---
-title: "EM algorithm and simulated annealing"
+title: "Bayesian Learning - Computer Lab 1"
 output:
   pdf_document:
     latex_engine: lualatex
-date: "2025-03-03"
+date: "2025-04-14"
 author:
   - Liuxi Mei
   - Xiaochen Liu
@@ -13,3 +13,72 @@ author:
 knitr::opts_chunk$set(echo = TRUE)
 
 ```
+
+## 1. Daniel Bernolli
+
+Let $y_1, \ldots, y_n \mid \theta \sim \text{Bern}(\theta)$, and assume that you have obtained a sample with $f = 35$ failures in $n = 78$ trials. Assume a $\text{Beta}(\alpha_0, \beta_0)$ prior for $\theta$ and let $\alpha_0 = \beta_0 = 7$.
+
+### (a)
+
+Draw 10000 random values (nDraws = 10000) from the posterior $\theta \mid y \sim \text{Beta}(\alpha_0 + s, \beta_0 + f)$, where $y = (y_1, \ldots, y_n)$, and verify graphically that the posterior mean $\mathbb{E}[\theta \mid y]$ and standard deviation $\text{SD}[\theta \mid y]$ converges to the true values as the number of random draws grows large.
+
+Give model is a bernoulli trial and prior has a $\text{Beta}(\alpha_0, \beta_0)$ distribution, posterior $ \sim \text{Beta}(\alpha_0 + s, \beta_0 + f)$, where s=(n-f)=53 and f=35. Thus: 
+    posterior $ \sim \text{Beta}(\alpha_0 + s, \beta_0 + f)$
+    posterior $ \sim \text{Beta}(50, 42)$
+
+
+```{r eval=TRUE}
+nr <- 10000
+set.seed(123456)
+res <- rbeta(nr,50,42)
+me <- numeric(nr)
+std <- numeric(nr)
+
+for (i in 1: nr) {
+  me[i] <- mean(res[1:i])
+  std[i] <- sqrt(var (res [1:i]))
+
+}
+
+plot(me, type = 'l')
+abline(h=50/(50+42), ,col ='red')
+
+plot(std, type = 'l')
+abline(h=sqrt(50*42/(50+42)^2/(42+50+1)),col ='red')
+
+```
+
+### (b) 
+Draw 10000 random values from the posterior to compute the posterior probability  
+\( \Pr(\theta > 0.5 \mid y) \) and compare with the exact value from the Beta posterior. [Hint: use `pbeta()` to calculate the exact value].
+
+```{r eval=TRUE}
+sorted <- res [res>0.5]
+# probability from sampling  
+pr <- length(sorted) / nr  
+
+# true probability  
+tr_pr <- 1- pbeta (0.5, 50, 42)
+```
+Posterior probability from sampling: 
+```{r eval=TRUE}
+print(pr)
+```
+
+Exact value from the Beta posterior: 
+```{r eval=TRUE}
+print(tr_pr)
+
+```
+The sampling gives very similar values comparing with the exact value from Beta posterior. 
+
+### (c) 
+Draw 10000 random values from the posterior of the odds \( \phi = \frac{\theta}{1 - \theta} \) by using the previous random draws from the Beta posterior for \( \theta \) and plot the posterior distribution of \( \phi \). [Hint: `hist()` and `density()` can be utilized].
+
+```{r eval=TRUE}
+odds <- res / (1-res) 
+hist(odds, breaks = 30, probability = TRUE, main = "Posterior of Odds", xlab = "Odds")
+lines(density(odds), col = "blue", lwd = 2)
+```
+
+
