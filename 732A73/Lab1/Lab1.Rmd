@@ -22,10 +22,7 @@ Let $y_1, \ldots, y_n \mid \theta \sim \text{Bern}(\theta)$, and assume that you
 
 Draw 10000 random values (nDraws = 10000) from the posterior $\theta \mid y \sim \text{Beta}(\alpha_0 + s, \beta_0 + f)$, where $y = (y_1, \ldots, y_n)$, and verify graphically that the posterior mean $\mathbb{E}[\theta \mid y]$ and standard deviation $\text{SD}[\theta \mid y]$ converges to the true values as the number of random draws grows large.
 
-Give model is a bernoulli trial and prior has a $\text{Beta}(\alpha_0, \beta_0)$ distribution, posterior $ \sim \text{Beta}(\alpha_0 + s, \beta_0 + f)$, where s=(n-f)=53 and f=35. Thus: 
-    posterior $ \sim \text{Beta}(\alpha_0 + s, \beta_0 + f)$
-    posterior $ \sim \text{Beta}(50, 42)$
-
+Give model is a bernoulli trial and prior has a $\text{Beta}(\alpha_0, \beta_0)$ distribution, posterior \$ \sim \text{Beta}(\alpha\_0 + s, \beta\_0 + f)\$, where s=(n-f)=53 and f=35. Thus: posterior \$ \sim \text{Beta}(\alpha\_0 + s, \beta\_0 + f)\$ posterior \$ \sim \text{Beta}(50, 42)\$
 
 ```{r eval=TRUE}
 nr <- 10000
@@ -48,9 +45,10 @@ abline(h=sqrt(50*42/(50+42)^2/(42+50+1)),col ='red')
 
 ```
 
-### (b) 
-Draw 10000 random values from the posterior to compute the posterior probability  
-\( \Pr(\theta > 0.5 \mid y) \) and compare with the exact value from the Beta posterior. [Hint: use `pbeta()` to calculate the exact value].
+### (b)
+
+Draw 10000 random values from the posterior to compute the posterior probability\
+$\Pr(\theta > 0.5 \mid y)$ and compare with the exact value from the Beta posterior. [Hint: use `pbeta()` to calculate the exact value].
 
 ```{r eval=TRUE}
 sorted <- res [res>0.5]
@@ -60,25 +58,188 @@ pr <- length(sorted) / nr
 # true probability  
 tr_pr <- 1- pbeta (0.5, 50, 42)
 ```
-Posterior probability from sampling: 
+
+Posterior probability from sampling:
+
 ```{r eval=TRUE}
 print(pr)
 ```
 
-Exact value from the Beta posterior: 
+Exact value from the Beta posterior:
+
 ```{r eval=TRUE}
 print(tr_pr)
 
 ```
-The sampling gives very similar values comparing with the exact value from Beta posterior. 
 
-### (c) 
-Draw 10000 random values from the posterior of the odds \( \phi = \frac{\theta}{1 - \theta} \) by using the previous random draws from the Beta posterior for \( \theta \) and plot the posterior distribution of \( \phi \). [Hint: `hist()` and `density()` can be utilized].
+The sampling gives very similar values comparing with the exact value from Beta posterior.
+
+### (c)
+
+Draw 10000 random values from the posterior of the odds $\phi = \frac{\theta}{1 - \theta}$ by using the previous random draws from the Beta posterior for $\theta$ and plot the posterior distribution of $\phi$. [Hint: `hist()` and `density()` can be utilized].
 
 ```{r eval=TRUE}
 odds <- res / (1-res) 
-hist(odds, breaks = 30, probability = TRUE, main = "Posterior of Odds", xlab = "Odds")
+hist(odds, breaks = 30, freq = FALSE,probability = TRUE, main = "Posterior of Odds", xlab = "Odds")
 lines(density(odds), col = "blue", lwd = 2)
 ```
 
+## 2. Log-normal distribution and the Gini coefficient.
+
+Assume that you have asked 8 randomly selected persons about their monthly income (in thousands Swedish Krona) and obtained the following eight observations:
+
+22, 33, 31, 49, 65, 78, 17, 24. A common model for non-negative continuous variables is the log-normal distribution. The log-normal distribution $\log N(\mu, \sigma^2)$ has density function
+
+$$
+p(y \mid \mu, \sigma^2) = \frac{1}{y \cdot \sqrt{2\pi\sigma^2}} \exp\left( -\frac{1}{2\sigma^2} (\log y - \mu)^2 \right),
+$$
+
+where $y > 0$, $-\infty < \mu < \infty$ and $\sigma^2 > 0$. The log-normal distribution is related to the normal distribution as follows: if $y \sim \log N(\mu, \sigma^2)$ then $\log y \sim N(\mu, \sigma^2)$.
+
+Let $y_1, \ldots, y_n \mid \mu, \sigma^2 \overset{\text{iid}}{\sim} \log N(\mu, \sigma^2)$, where $\mu = 3.65$ is assumed to be known but $\sigma^2$ is unknown with non-informative prior $p(\sigma^2) \propto 1/\sigma^2$. The posterior for $\sigma^2$ is the scaled inverse chi-squared distribution, $\text{Scale-inv-}\chi^2(n, \tau^2)$, where
+
+$$
+\tau^2 = \frac{ \sum_{i=1}^{n} (\log y_i - \mu)^2 }{n}.
+$$
+
+### (a)
+
+Draw 10000 random values from the posterior of $\sigma^2$ by assuming $\mu = 3.65$ and plot the posterior distribution.
+
+Inverse-chi-squared distribution can be transferred from chi-squared distribution by the following formula:\
+$$ \text{Inverse-}\chi^2(\text{df}, \text{scale}) = \frac{\text{df} \times \text{scale}}{\chi^2_{\text{df}}}. $$ Where `scale` (the scale parameter), and `df` (the degrees of freedom).
+
+```{r eval=TRUE}
+rm(list=ls())
+
+rinvchisq <- function(n, df, scale) {
+  df * scale / rchisq(n, df)  
+}
+
+mu <- 3.65
+arg <- c(22, 33, 31, 49, 65, 78, 17, 24)
+
+tau_sq <- sum((log(arg) -3.65)^2)/length(arg)
+
+set.seed(123456)
+samp <- rinvchisq(10000, length(arg), tau_sq)
+
+hist(samp, breaks = 40, freq = FALSE, ylim = c(0, 4))
+lines(density(samp), col = "blue", lwd = 2)
+
+```
+
+### (b)
+
+The most common measure of income inequality is the Gini coefficient, $G$, where $0 \leq G \leq 1$. $G = 0$ means a completely equal income distribution, whereas $G = 1$ means complete income inequality (see e.g. Wikipedia for more information about the Gini coefficient). It can be shown that $G = 2\Phi\left( \frac{\sigma}{\sqrt{2}} \right) - 1$ when incomes follow a $\log N(\mu, \sigma^2)$ distribution. $\Phi(z)$ is the cumulative distribution function (CDF) for the standard normal distribution with mean zero and unit variance. Use the posterior draws in a) to compute the posterior distribution of the Gini coefficient $G$ for the current data set.
+
+Part (a) has given information about the posterior distribution of $\sigma^2$: $\sigma^2 \mid y_1, \ldots, y_n \overset{\text{iid}}{\sim} \text{Scale-inv-}\chi^2(n, \tau^2)$,
+
+and since incomes follow a $\log N(\mu, \sigma^2)$ distribution, $G = 2\Phi\left( \frac{\sigma}{\sqrt{2}} \right) - 1$, we have
+
+```{r eval=TRUE}
+G <- 2* pnorm(sqrt(samp)*sqrt(2))-1
+hist(G, breaks = 40, freq = FALSE)
+lines(density(G), col = "blue", lwd = 2)
+
+```
+
+### (c)
+
+Use the posterior draws from b) to compute a 95% equal tail credible interval for $G$. A 95% equal tail credible interval $(a, b)$ cuts off 2.5% percent of the posterior probability mass to the left of $a$, and 2.5% to the right of $b$.
+
+```{r eval=TRUE}
+ci95 <- quantile(G, probs = c(0.025, 0.975))
+
+ci95
+```
+
+### (d)
+
+Use the posterior draws from b) to compute a 95% Highest Posterior Density Interval (HPDI) for $G$. Compare the two intervals in (c) and (d). [Hint: Use the `hdi()` function from the `bayestestR` package.]
+
+```{r eval=TRUE}
+library(bayestestR)
+hdi(G, ci= 0.95)
+
+```
+
+For a non symmetrical distribution where the most probability mass lies in the left side, as in this case, Highest Posterior Density Interval (HPDI) takes much probability mass from the left side comparing with qual tail credible interval. Since HPDI concentrates on part with highest probability mass, it always has a narrower interval than equal tail credible interval.
+
+## 3. Bayesian inference for the rate parameter in the Poisson distribution
+
+This exercise aims to show you that a grid approximation can be used to obtain information of the posterior distribution when the distributions for prior and posterior are not conjugate. In some cases, it is sufficient to evaluate the posterior pdf $p(\lambda \mid y)$ at a finite set of $\lambda$ values to understand its structure and obtain important quantities.
+
+The data points below represent the number of goals scored in each match of the opening week of the 2024 Swedish women's football league (Damallsvenskan):\
+$y = (0, 2, 5, 5, 7, 1, 4)$.\
+We assume that these data points are independent observations from the Poisson distribution with rate parameter $\lambda > 0$ which tells us about the average goals rate in a match. Let the prior distribution of $\lambda$ be the half-normal distribution with prior pdf
+
+$$
+p(\lambda \mid \sigma) = \frac{\sqrt{2}}{\sigma \sqrt{\pi}} \exp\left( - \frac{\lambda^2}{2\sigma^2} \right), \quad \lambda \geq 0,
+$$
+
+and the scale parameter that is set to be $\sigma = 5$.
+
+### (a)
+
+Derive the expression for what the posterior pdf $p(\lambda \mid y, \sigma)$ is proportional to. Then, plot the posterior distribution of the average goals rate parameter $\lambda$ over a fine grid of $\lambda$ values. [Hint: you need to normalize the posterior pdf $p(\lambda \mid y, \sigma)$ so that it integrates to one.]
+
+The posterior distribution of $\lambda$ given the data $y$ and the prior scale parameter $\sigma$ is proportional to the product of the likelihood and the prior. That is,\
+$$
+p(\lambda \mid y, \sigma) \propto p(y \mid \lambda) \cdot p(\lambda \mid \sigma).
+$$
+
+Since it is assumed that $y_1, y_2, \ldots, y_n \overset{\text{iid}}{\sim} \text{Poisson}(\lambda)$, then the likelihood function is given by
+
+$$
+p(y \mid \lambda) = \prod_{i=1}^{n} \frac{e^{-\lambda} \lambda^{y_i}}{y_i!} \propto e^{-n\lambda} \lambda^{\sum y_i}.
+$$
+
+And the prior is assumed to be a Half-normal distribution:
+
+\[
+p(\lambda \mid \sigma) = \frac{\sqrt{2}}{\sigma \sqrt{\pi}} \exp\left( -\frac{\lambda^2}{2\sigma^2} \right), \quad \lambda \geq 0.
+\]
+
+Combining the likelihood and the prior, the posterior distribution is proportional to:
+
+\[
+p(\lambda \mid y, \sigma) \propto e^{-n\lambda} \cdot \lambda^{\sum y_i} \cdot \exp\left( -\frac{\lambda^2}{2\sigma^2} \right).
+\]
+
+```{r eval=TRUE}
+rm(list= ls())
+y <- c(0, 2, 5, 5, 7, 1, 4)
+sig <- 5
+p <- function(lambda) {
+  
+  res <- sqrt(2)/sig /sqrt(pi) * exp(-length(y)* lambda) * 
+    lambda^(sum(y)) * exp(-lambda^2 / 2/ sig^2)
+  
+  return(res)
+}
+
+var <- seq (0,10,0.001)
+
+#normalize for results
+res <- p(var) / sum(p(var) * 0.001)  # here have to also divide by the steps
+plot(var, res, type = "l", col = "blue")
+```
+
+
+### (b)
+
+Find the (approximate) posterior mode of $\lambda$ from the information in a).
+
+The posterior mode of \( \lambda \) is the value that maximizes the posterior distribution, i.e.,
+
+\[
+\lambda_{\text{mode}} = \arg \max_{\lambda > 0} p(\lambda \mid y, \sigma).
+\]
+```{r eval=TRUE}
+opt_lambda <- var[which.max(res)]
+print (opt_lambda)
+```
+
+The (approximate) posterior mode of $\lambda$ is 3.364.
 
