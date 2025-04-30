@@ -1,0 +1,273 @@
+---
+title: "Bayesian Learning - Computer Lab 2"
+output:
+  pdf_document:
+    latex_engine: lualatex
+date: "2025-04-28"
+author:
+  - Liuxi Mei
+  - Xiaochen Liu
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## 1. Linear and polynomial regression
+
+The dataset `temp_linkoping.csv` contains daily average temperatures (in degree Celsius) in Linköping between July 2023 and June 2024. Import the dataset in R.\
+The response variable is `temp` and the covariate `time`, which is defined as
+
+$$
+\text{time} = \frac{\text{the number of days since the beginning of the observation period}}{365}.
+$$
+
+A Bayesian analysis of the following quadratic regression model is to be performed:
+
+$$
+\text{temp} = \beta_0 + \beta_1 \cdot \text{time} + \beta_2 \cdot \text{time}^2 + \varepsilon, \quad \varepsilon \overset{\text{iid}}{\sim} \mathcal{N}(0, \sigma^2).
+$$\
+
+#### (a)
+
+Use the conjugate prior for the linear regression model. The prior hyperparameters $\mu_0$, $\Omega_0$, $\nu_0$ and $\sigma_0^2$ shall be set to sensible values. Start with
+
+$$
+\mu_0 = (0, 100, -100)^T, \quad \Omega_0 = 0.01 \cdot I_3, \quad \nu_0 = 1, \quad \sigma_0^2 = 1.
+$$
+
+Check if this prior agrees with your prior opinions by simulating draws from the joint prior of all parameters and for every draw compute the regression curve.\
+This gives a collection of regression curves; one for each draw from the prior.\
+Does the collection of curves look reasonable? If not, change the prior hyperparameters until the collection of prior regression curves agrees with your prior beliefs about the regression curve.\
+*Hint: R package `mvtnorm` can be used and your Scaled-Inv-*$\chi^2$ simulator of random draws from Lab 1.
+
+```{r eval=TRUE}
+data <- read.csv('temp_linkoping.csv')
+library (mvtnorm)
+
+# define inverse chi square function
+mu_0 <- c(15, -50, 50)
+nu_0<- 1
+sig_0_sq <- 2
+omega_0 <- diag(3)*0.8
+ rinvchisq <- function(n, df, scale) {
+  df * scale / rchisq(n, df)
+  }
+```
+
+Join prior for bete given
+
+```{r eval=TRUE}
+# sort our time and time^2
+data['time^2'] <- data[3]^2
+data['time^0'] <- data[3]^0
+time <- as.matrix(data[, c(6,3,5)])
+temp <- as.matrix(data[, 4])
+
+curve <-  matrix(NA, nrow = 366, ncol = 100)
+
+for  (i in 1: 100) {
+  sig_sq_sp<- rinvchisq(1,nu_0, sig_0_sq)
+  samp <- rmvnorm(n=1, mean= mu_0, sigma = sig_sq_sp*solve(omega_0))
+  pred  <- time %*% as.numeric(samp)
+  curve [,i] <- pred
+}
+
+plot(time[,2], temp, pch = 16, col = 'gray', xlab = "Time", ylab = "Temperature",
+     main = "Posterior Median and 90% Prediction Interval")
+for (i in 2:100) {
+  lines(data[,3], curve[,i], col = rgb(0,0,1,alpha=0.2))  # 淡蓝色
+}
+```
+
+#### (b)
+
+Write a function that simulates draws from the joint posterior distribution of $\beta_0$, $\beta_1$, $\beta_2$ and $\sigma^2$.
+
+i.  Plot a histogram for each marginal posterior of the parameters.
+
+ii. Make a scatter plot of the temperature data and overlay a curve for the posterior median of the regression function
+
+$$
+f(\text{time}) = \mathbb{E}[\text{temp}|\text{time}] = \beta_0 + \beta_1 \cdot \text{time} + \beta_2 \cdot \text{time}^2,
+$$
+
+i.e., the median of $f(\text{time})$ is computed for every value of `time`.\
+In addition, overlay curves for the 90% equal tail posterior probability intervals of $f(\text{time})$, i.e., the 5 and 95 posterior percentiles of $f(\text{time})$ are computed for every value of `time`.\
+Does the posterior probability interval contain most of the data points? Should they?
+
+##### Part 1
+
+Since we use a Normal-Inverse-Chi-Squared prior on $(\beta, \sigma^2)$, where:
+
+-   $\beta \mid \sigma^2 \sim \mathcal{N}(\mu_0, \sigma^2 \Omega_0^{-1})$
+-   $\sigma^2 \sim \text{Inv-}\chi^2(\nu_0, s_0)$
+
+Given observed data $(X, y)$, the joint posterior distribution of $\beta$ and $\sigma^2$ is: - The marginal posterior of $\sigma^2$ is:
+
+$$
+\sigma^2 \mid y \sim \text{Inv-}\chi^2(\nu_n, \sigma_n)
+$$
+
+with: $$
+\nu_n = \nu_0 + n
+$$
+
+and $$
+\nu_n \sigma_n^2 = \nu_0 \sigma_0^2 + y^\top y + \mu_0^\top \Omega_0 \mu_0 - \mu_n^\top \Omega_n \mu_n
+$$ where the updated parameters are:
+
+$$
+\Omega_n = \Omega_0 + X^\top X
+$$
+
+$$
+\mu_n = \Omega_n^{-1}(\Omega_0 \mu_0 + X^\top y)
+$$
+
+-   The conditional posterior of $\beta$ given $\sigma^2$ and data is:
+
+$$
+\beta \mid \sigma^2, y \sim \mathcal{N}(\mu_n, \sigma^2 \Omega_n^{-1})
+$$
+
+```{r eval=TRUE}
+set.seed(123456)
+sample_posterior <- function (number ,nu_0, sig_0_sq, omega_0) {
+  # The marginal posterior of sigma
+
+nu_n <- nu_0+366
+omega_n <- t(time) %*%time+omega_0
+mu_n <- solve(omega_n) %*% (omega_0%*%mu_0 +t(time)%*%(temp))
+sig_n_sq <- as.numeric(1/nu_n*(nu_0*sig_0_sq+
+                                 t(temp)%*%temp+
+                                 t(mu_0)%*%omega_n%*%mu_0-
+                                 t(mu_n)%*%omega_n%*%mu_n))
+
+# sampled results
+# joint posterior of sigma square given data
+  sig2_marg<- rinvchisq(number,nu_n, sig_n_sq)
+  
+# joint posterior of beta given sigma square and data   
+beta_marg <- matrix(nrow=number, ncol=3)
+colnames(beta_marg) = c('beta0', 'beta1','beta2')
+
+ for (i in 1: number) {
+     beta_marg[i,] <- as.vector(rmvnorm(n=1, mean= mu_n, sigma = sig2_marg[i]*solve(omega_n)))
+ }
+return(list(sig2_marg = sig2_marg, beta_marg = beta_marg))
+}
+
+res <-sample_posterior(number=10000 ,nu_0=nu_0, sig_0_sq=sig_0_sq, omega_0=omega_0)
+sig2_marg <- res$sig2_marg
+beta_marg <- res$beta_marg
+
+```
+
+Then we can plot the histogram for $\sigma^2$ given data:
+
+```{r eval=TRUE}
+hist(sig2_marg, breaks = 20)
+```
+
+The histogram for $\beta_0$ given $\sigma^2$ and data:
+
+```{r eval=TRUE}
+hist(beta_marg[,1], breaks = 20)
+```
+
+The histogram for $\beta_1$ given $\sigma^2$ and data:
+
+```{r eval=TRUE}
+hist(beta_marg[,2], breaks = 20)
+```
+
+The histogram for $\beta_2$ given $\sigma^2$ and data:
+
+```{r eval=TRUE}
+hist(beta_marg[,1], breaks = 20)
+
+```
+
+##### Part 2
+
+```{r eval=TRUE}
+pred_temp <- time%*%t(beta_marg)
+pred_temp_meadian <- apply(pred_temp,1, quantile, probs = c(0.05,0.95) )
+
+plot(time[,2], temp, pch = 16, col = 'gray', xlab = "Time", ylab = "Temperature",
+     main = "Posterior Median and 90% Prediction Interval")
+points(time[,2], pred_temp_meadian[1,], col ='red')
+points(time[,2], pred_temp_meadian[2,], col ='blue')
+
+```
+
+#### (c)
+
+It is of interest to locate the time with the lowest expected temperature (i.e., the time where $f(\text{time})$ is minimal). Let's call this value $\tilde{x}$.\
+Use the simulated draws in (b) to simulate from the posterior distribution of $\tilde{x}$.\
+You can solve this analytically or numerically.\
+*Hint: The regression curve is a quadratic polynomial. Given each posterior draw of* $\beta_0$, $\beta_1$, and $\beta_2$, you can find a simple formula for $\tilde{x}$.
+
+To find the time point $\tilde{x}$ at which the function reaches its minimum , we compute the derivative with respect to time:
+
+$$
+\frac{d}{d\,\text{time}} f(\text{time}) = \beta_1 + 2\beta_2 \cdot \text{time}
+$$
+
+Setting the derivative equal to zero:
+
+$$
+\beta_1 + 2\beta_2 \cdot \tilde{x} = 0
+$$
+
+Solving for $\tilde{x}$ gives:
+
+$$
+\tilde{x} = -\frac{\beta_1}{2\beta_2}
+$$
+
+```{r eval=TRUE}
+xbar <- -beta_marg[,2]/2/beta_marg[,3]
+hist(xbar, breaks = 20)
+```
+
+
+#### (d)
+
+Say now that you want to estimate a polynomial regression of order 10, but you suspect that higher order terms may not be needed, and you worry about overfitting the data.\
+Suggest a suitable prior that mitigates this potential problem and motivate your choice.\
+Repeat task (a) for the selected prior and the higher order polynomial to see if it behaves as expected.\
+*Hint: The task is to specify* $\mu_0$ and $\Omega_0$ in a suitable way.
+```{r eval=TRUE}
+# define inverse chi square function
+mu_0_new <- c(rep(2,3),rep(16,8))*0.02
+nu_0<- 1
+sig_0_sq <- 2
+omega_0_new <- diag(c(rep(1, 3), rep(10, 8)))*10000 
+
+#construct poly terms
+x <- data[, 4]
+poly_terms <- sapply(0:10, function(p) x^p)
+colnames(poly_terms) <- paste0("time^", 0:10)
+time_new <- as.matrix(poly_terms)
+
+# sort our time and time^2
+
+curve_new <-  matrix(NA, nrow = 366, ncol = 100)
+
+for  (i in 1: 100) {
+  sig_sq_sp<- rinvchisq(1,nu_0, sig_0_sq)
+  samp_new <- rmvnorm(n=1, mean= mu_0_new, sigma = sig_sq_sp*solve(omega_0_new))
+  pred_new  <- time_new %*% as.numeric(samp_new)
+  curve_new [,i] <- pred_new
+}
+
+plot(time[,2], temp, pch = 16, col = 'gray', xlab = "Time", ylab = "Temperature",ylim = range(curve_new[,i])
+     main = "Posterior Median and 90% Prediction Interval")
+for (i in 2:100) {
+  lines(data[,3], curve_new[,i], col = rgb(0,0,1,alpha=0.2))  # 淡蓝色
+}
+```
+
