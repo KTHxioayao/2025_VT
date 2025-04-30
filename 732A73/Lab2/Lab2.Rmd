@@ -74,10 +74,9 @@ for  (i in 1: 100) {
   curve [,i] <- pred
 }
 
-plot(time[,2], temp, pch = 16, col = 'gray', xlab = "Time", ylab = "Temperature",
-     main = "Posterior Median and 90% Prediction Interval")
+plot(time[,2], temp, pch = 16, col = 'gray', xlab = "Time", ylab = "Temperature")
 for (i in 2:100) {
-  lines(data[,3], curve[,i], col = rgb(0,0,1,alpha=0.2))  # 淡蓝色
+  lines(data[,3], curve[,i], col = rgb(0,0,1,alpha=0.2))  
 }
 ```
 
@@ -233,22 +232,26 @@ xbar <- -beta_marg[,2]/2/beta_marg[,3]
 hist(xbar, breaks = 20)
 ```
 
-
 #### (d)
 
 Say now that you want to estimate a polynomial regression of order 10, but you suspect that higher order terms may not be needed, and you worry about overfitting the data.\
 Suggest a suitable prior that mitigates this potential problem and motivate your choice.\
 Repeat task (a) for the selected prior and the higher order polynomial to see if it behaves as expected.\
 *Hint: The task is to specify* $\mu_0$ and $\Omega_0$ in a suitable way.
+
+To reflect our prior belief that lower-order terms are likely important, we assign relatively low precision values (small diagonal values (1) in Ω₀) to them.On the other hand, for higher-order terms (e.g., degree 5 to 10), we set much higher prior precision (1000), encouraging these coefficients to be small unless the data provides strong evidence otherwise.
+
+It is shown that the curve fit the actual data better than what we have in task (a), but no significant improvement is obtained than what we have from task (b) where we have even lower order. Therefore, we believe that higher order terms are not needed.    
+
 ```{r eval=TRUE}
 # define inverse chi square function
-mu_0_new <- c(rep(2,3),rep(16,8))*0.02
+mu_0_new <- c(25, -60, 0.01,-1,60,10,0,0,0,0,0)
 nu_0<- 1
 sig_0_sq <- 2
-omega_0_new <- diag(c(rep(1, 3), rep(10, 8)))*10000 
+omega_0_new <- diag(c(rep(1, 6), rep(1000, 5))) 
 
 #construct poly terms
-x <- data[, 4]
+x <- data[, 3]
 poly_terms <- sapply(0:10, function(p) x^p)
 colnames(poly_terms) <- paste0("time^", 0:10)
 time_new <- as.matrix(poly_terms)
@@ -264,10 +267,9 @@ for  (i in 1: 100) {
   curve_new [,i] <- pred_new
 }
 
-plot(time[,2], temp, pch = 16, col = 'gray', xlab = "Time", ylab = "Temperature",ylim = range(curve_new[,i])
-     main = "Posterior Median and 90% Prediction Interval")
+plot(time[,2], temp, pch = 16, col = 'gray', xlab = "Time", ylab = "Temperature"#,ylim=range(curve_new)
+     )
 for (i in 2:100) {
-  lines(data[,3], curve_new[,i], col = rgb(0,0,1,alpha=0.2))  # 淡蓝色
+  lines(data[,3], curve_new[,i], col = rgb(0,0,1,alpha=0.2)) 
 }
 ```
-
