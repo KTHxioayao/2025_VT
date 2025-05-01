@@ -241,7 +241,7 @@ Repeat task (a) for the selected prior and the higher order polynomial to see if
 
 To reflect our prior belief that lower-order terms are likely important, we assign relatively low precision values (small diagonal values (1) in Ω₀) to them.On the other hand, for higher-order terms (e.g., degree 5 to 10), we set much higher prior precision (1000), encouraging these coefficients to be small unless the data provides strong evidence otherwise.
 
-It is shown that the curve fit the actual data better than what we have in task (a), but no significant improvement is obtained than what we have from task (b) where we have even lower order. Therefore, we believe that higher order terms are not needed.    
+It is shown that the curve fit the actual data better than what we have in task (a), but no significant improvement is obtained than what we have from task (b) where we have even lower order. Therefore, we believe that higher order terms are not needed.
 
 ```{r eval=TRUE}
 # define inverse chi square function
@@ -273,3 +273,119 @@ for (i in 2:100) {
   lines(data[,3], curve_new[,i], col = rgb(0,0,1,alpha=0.2)) 
 }
 ```
+
+## 2. Posterior approximation for classification with logistic regression
+
+The dataset Disease.xlsx contains n = 313 observations on the following seven variables related to a certain disease:
+
+| Variable | Data type | Meaning | Role |
+|-----------------|-----------------|---------------------|-----------------|
+| Class_of_diagnosis | Binary | Disease or not? | Response y |
+| Gender | Binary | Woman (1) or Male (0) | Feature |
+| Age | Counts | Age | Feature |
+| Diagnosis_method | Binary | 1 for a certain diagnosis method | Feature |
+| Duration_of_symptoms | Numeric | Duration of symptoms in days | Feature |
+| Dyspnoea | Binary | 1 if person has laboured breathing | Feature |
+| White_blood | Counts | N white blood cells per microliter | Feature |
+
+#### (a)
+
+Consider the logistic regression model:
+
+$$
+\Pr(y = 1|x, \beta) = \frac{\exp(x^T \beta)}{1 + \exp(x^T \beta)},
+$$
+
+where y equals 1 if the person has a disease and 0 if not. x is a 7-dimensional vector containing six features and a column of 1's to include an intercept in the model. The goal is to approximate the posterior distribution of the parameter vector β with a multivariate normal distribution
+
+$$
+\beta|y, x \sim \mathcal{N}(\tilde{\beta}, J_y^{-1}(\tilde{\beta})),
+$$
+
+where $\tilde{\beta}$ is the posterior mode and $J(\tilde{\beta}) = -\frac{\partial^2 \ln p(\beta|y)}{\partial \beta \partial \beta^T} \bigg|_{\beta = \tilde{\beta}}$ is the negative of the observed Hessian evaluated at the posterior mode. Note that $\frac{\partial^2 \ln p(\beta|y)}{\partial \beta \partial \beta^T}$ is a $7 \times 7$ matrix with second derivatives on the diagonal and cross-derivatives $\frac{\partial^2 \ln p(\beta|y)}{\partial \beta_i \partial \beta_j}$ on the off-diagonal. You can compute this derivative by hand, but we will let the computer do it numerically for you. Calculate both $\tilde{\beta}$ and $J(\tilde{\beta})$ by using the `optim` function in R.
+
+*Hint: You may use code snippets from my demo of logistic regression in Lecture 6.* Use the prior $\beta \sim \mathcal{N}(0, \tau^2 I)$, where $\tau = 2$.\
+Present the numerical values of $\tilde{\beta}$ and $J_y^{-1}(\tilde{\beta})$ for the Disease data. Compute an approximate 95% equal tail posterior probability interval for the regression coefficient to the variable Age. Would you say that this feature is of importance for the probability that a person has the disease?
+
+*Hint: You can verify that your estimation results are reasonable by comparing the posterior means to the maximum likelihood estimates, given by:*
+
+```{r eval=FALSE}
+#glmModel <- glm(Class_of_diagnosis ~ 0 + ., data = Disease, family = binomial)
+```
+
+```{r eval=True}
+rm(list=ls())
+library(readxl)
+Covs <- c(1:7) # Select which covariates/features to include
+standardize <- TRUE # If TRUE, covariates/features are standardized to mean 0 and variance 1
+lambda <- 1# scaling factor for the prior of beta 
+
+data <- read_excel("Disease.xlsx", 
+                   col_names = TRUE, 
+                   col_types = c("numeric", "numeric", "numeric", 
+                                 "numeric", "numeric", "numeric", "numeric", 
+                                 "numeric"))  
+
+# Setting up the prior
+
+Nobs <- dim(data)[1] # number of observations
+y <- matrix(data$class_of_diagnosis,Nobs,1) 
+X <- as.matrix(data[,c(Covs)])
+
+# standardize for all features
+cont_vars <- c("age", "duration_of_symptoms", "white_blood")
+X[, cont_vars] <- scale(X[, cont_vars])
+
+
+Npar <- dim(X)[2]
+
+# Setting up the prior
+mu <- as.matrix(rep(0,Npar)) # Prior mean vector
+Sigma <- 4*diag(Npar) # Prior covariance matrix
+
+LogPostLogistic <- function(betas,y,X,mu,Sigma){
+  linPred <- X%*%betas;
+  # log likelihood
+  logLik <- sum( linPred*y - log(1 + exp(linPred)) );
+  if (abs(logLik) == Inf) logLik = -20000; # Likelihood is not finite, stear the optimizer away from here!
+  logPrior <- dmvnorm(betas, mu, Sigma, log=TRUE);
+  
+  return(logLik + logPrior)
+}
+
+# Select the initial values for beta
+initVal <- matrix(0,Npar,1)
+
+OptimRes <- optim(initVal,LogPostLogistic,gr=NULL,y,X,mu,Sigma,method=c("BFGS"),control=list(fnscale=-1),hessian=TRUE)
+
+
+beta_op <- OptimRes$par
+tildeb_op <- OptimRes$hessian
+
+age_index <- which(colnames(X) == "age")  # index of age
+beta_age <- beta_op[age_index]
+var_op<- diag(solve(-tildeb_op))
+std_age <- sqrt(var_op)[age_index]
+CI_age <- beta_age + c(-1.96, 1.96) * std_age
+
+# 得到原始数据中 age 的标准差
+sd_age <- sd(data$age)
+
+# 反标准化 beta 和 std
+beta_age_original <- beta_age / sd_age
+std_age_original <- std_age / sd_age
+CI_age_original <- beta_age_original + c(-1.96, 1.96) * std_age_original
+
+# 如果你想比较的是真实变量，不是标准化后的
+glmModel <- glm(class_of_diagnosis ~ 0 + ., data = data, family = binomial)
+
+summary(glmModel)
+```
+
+
+
+#### (b)
+
+Use your normal approximation to the posterior from (a). Write a function that simulate draws from the posterior predictive distribution of $\Pr(y = 1|x)$, where the certain diagnosis method was used and where the values of x corresponds to a 38-year-old woman, with 10 days of symptoms, no laboured breathing and 11000 white blood cells per microliter. Plot the posterior predictive distribution of $\Pr(y = 1|x)$ for this person.
+
+*Hints: The R package `mvtnorm` will be useful. Remember that* $\Pr(y = 1|x)$ can be calculated for each posterior draw of β.
