@@ -267,7 +267,8 @@ for  (i in 1: 100) {
   curve_new [,i] <- pred_new
 }
 
-plot(time[,2], temp, pch = 16, col = 'gray', xlab = "Time", ylab = "Temperature"#,ylim=range(curve_new)
+plot(time[,2], temp, pch = 16, col = 'gray', xlab = "Time", 
+     ylab = "Temperature"#,ylim=range(curve_new)
      )
 for (i in 2:100) {
   lines(data[,3], curve_new[,i], col = rgb(0,0,1,alpha=0.2)) 
@@ -309,83 +310,93 @@ Present the numerical values of $\tilde{\beta}$ and $J_y^{-1}(\tilde{\beta})$ fo
 
 *Hint: You can verify that your estimation results are reasonable by comparing the posterior means to the maximum likelihood estimates, given by:*
 
-```{r eval=FALSE}
-#glmModel <- glm(Class_of_diagnosis ~ 0 + ., data = Disease, family = binomial)
-```
 
-```{r eval=True}
-rm(list=ls())
-library(readxl)
-Covs <- c(1:7) # Select which covariates/features to include
-standardize <- TRUE # If TRUE, covariates/features are standardized to mean 0 and variance 1
-lambda <- 1# scaling factor for the prior of beta 
+```{r eval=TRUE}
+library(mvtnorm)
 
-data <- read_excel("Disease.xlsx", 
-                   col_names = TRUE, 
-                   col_types = c("numeric", "numeric", "numeric", 
-                                 "numeric", "numeric", "numeric", "numeric", 
-                                 "numeric"))  
-
-# Setting up the prior
-
+data <- read.csv("Disease.csv")
 Nobs <- dim(data)[1] # number of observations
-y <- matrix(data$class_of_diagnosis,Nobs,1) 
-X <- as.matrix(data[,c(Covs)])
+#data <- data.frame(intercept=rep(1,Nobs),disease_data) # add intercept
+data[,c("age","duration_of_symptoms","white_blood" )] <- 
+scale(data[,c("age","duration_of_symptoms","white_blood" )])
 
-# standardize for all features
-cont_vars <- c("age", "duration_of_symptoms", "white_blood")
-X[, cont_vars] <- scale(X[, cont_vars])
-
-
-Npar <- dim(X)[2]
-
-# Setting up the prior
-mu <- as.matrix(rep(0,Npar)) # Prior mean vector
-Sigma <- 4*diag(Npar) # Prior covariance matrix
-
-LogPostLogistic <- function(betas,y,X,mu,Sigma){
-  linPred <- X%*%betas;
-  # log likelihood
-  logLik <- sum( linPred*y - log(1 + exp(linPred)) );
-  if (abs(logLik) == Inf) logLik = -20000; # Likelihood is not finite, stear the optimizer away from here!
-  logPrior <- dmvnorm(betas, mu, Sigma, log=TRUE);
-  
-  return(logLik + logPrior)
+Xnames = colnames(data)[1:6]
+LogPostLogistic <- function(beta,y,X,tau){
+  lin_pred <- X %*% beta
+  p = length(beta)
+  log_lik <- sum(y * lin_pred - log1p(exp(lin_pred)))
+  #log_prior <- -sum(beta^2) / (2 * tau^2)
+  log_prior = dmvnorm(beta, rep(0, p), tau^2 * diag(p), log=TRUE);
+  return(log_lik + log_prior)
 }
-
-# Select the initial values for beta
+lambda <- 1#
+tau=2
+Npar = dim(data)[2] - 1
+mu <- as.matrix(rep(0,Npar)) #
 initVal <- matrix(0,Npar,1)
+Sigma <- (1/lambda)*diag(Npar) 
+y =  as.numeric(data$class_of_diagnosis)
 
-OptimRes <- optim(initVal,LogPostLogistic,gr=NULL,y,X,mu,Sigma,method=c("BFGS"),control=list(fnscale=-1),hessian=TRUE)
+X = as.matrix(data[,1:ncol(data) - 1])# Select which covariates/features to include
+OptimRes <- optim(par = rep(0, ncol(X)), 
+                fn = LogPostLogistic, 
+                X = X, y = y, tau = tau,
+                method = "BFGS", 
+                control = list(fnscale = -1, maxit = 1000),
+                hessian = TRUE)
+approxPostMode <- matrix(OptimRes$par,1,6)
+cat("The posterior mode:",OptimRes$par) # The posterior mode
+cov_matrix <- solve(-OptimRes$hessian)  # J^{-1}
+approxPostStd <- sqrt(diag(cov_matrix)) # `Computing approximate standard deviations.
 
+Cred_int <- matrix(0,2,6) # Create 95 % approximate credibility intervals for each coefficient
+Cred_int[1,] <- approxPostMode - 1.96*approxPostStd
+Cred_int[2,] <- approxPostMode + 1.96*approxPostStd
 
-beta_op <- OptimRes$par
-tildeb_op <- OptimRes$hessian
+colnames(Cred_int) <- Xnames
+rownames(Cred_int) <- c("LCI","UCI") #LCI（Lower Confidence Interval）UCI（Upper Confidence Interval）
+print(Cred_int)
+# 使用glm验证
+glm_data <- data.frame(
+  Class_of_diagnosis = data$class_of_diagnosis,
+  Gender = data$gender,
+  Age_z = data$age,
+  Duration_z = data$duration_of_symptoms,
+  Dyspnoea = data$dyspnoea,
+  White_z = data$white_blood
+)
 
-age_index <- which(colnames(X) == "age")  # index of age
-beta_age <- beta_op[age_index]
-var_op<- diag(solve(-tildeb_op))
-std_age <- sqrt(var_op)[age_index]
-CI_age <- beta_age + c(-1.96, 1.96) * std_age
-
-# 得到原始数据中 age 的标准差
-sd_age <- sd(data$age)
-
-# 反标准化 beta 和 std
-beta_age_original <- beta_age / sd_age
-std_age_original <- std_age / sd_age
-CI_age_original <- beta_age_original + c(-1.96, 1.96) * std_age_original
-
-# 如果你想比较的是真实变量，不是标准化后的
-glmModel <- glm(class_of_diagnosis ~ 0 + ., data = data, family = binomial)
-
-summary(glmModel)
+glm_model <- glm(Class_of_diagnosis ~ Gender + Age_z + Duration_z + Dyspnoea + White_z,
+                 data = glm_data, family = binomial)
+print(summary(glm_model))
+cat("\n95% CI for Age coefficient: [", Cred_int[1,2], ", ", Cred_int[2,2], "]\n")
+cat("MAP of age coefficient: ", approxPostMode[2], "\n")
+cat("Posterior mean of age coefficient: ", OptimRes$par[2], "\n")
+cat("glm model coefficient of age: ", coef(glm_model)[2], "\n")
+#Report the posterior mean (Estimate) and 95% confidence interval (LCI, UCI), 
+ # Age:  -0.26762 (95% CI: -0.015, -0.51)
 ```
-
-
+The 95% confidence interval of the Age variable does not include 0, result is [-0.015, -0.51] ,MAP is -0.26, so it  has a significant impact on the probability of illness.
 
 #### (b)
 
 Use your normal approximation to the posterior from (a). Write a function that simulate draws from the posterior predictive distribution of $\Pr(y = 1|x)$, where the certain diagnosis method was used and where the values of x corresponds to a 38-year-old woman, with 10 days of symptoms, no laboured breathing and 11000 white blood cells per microliter. Plot the posterior predictive distribution of $\Pr(y = 1|x)$ for this person.
 
 *Hints: The R package `mvtnorm` will be useful. Remember that* $\Pr(y = 1|x)$ can be calculated for each posterior draw of β.
+```{r eval=TRUE} 
+set.seed(123)
+data_b <- read.csv("Disease.csv")
+
+new_age <- (38 - mean(data_b$age)) / sd(data_b$age)
+new_duration <- (10 - mean(data_b$duration_of_symptoms)) / sd(data_b$duration_of_symptoms)
+new_white <- (11000 - mean(data_b$white_blood)) / sd(data_b$white_blood)
+X_new <- c(1, 1, new_age, new_duration, 0, new_white)
+
+samples <- rmvnorm(10000, mean = OptimRes$par, sigma = cov_matrix)
+lin_pred <- samples %*% X_new
+pr <- exp(lin_pred) / (1 + exp(lin_pred))
+
+hist(pr, breaks = 50, main = "Posterior Predictive Distribution of Pr(y=1|x)",
+     xlab = "Probability", col = "skyblue", border = "white")
+```
+
