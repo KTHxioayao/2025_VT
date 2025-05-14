@@ -20,11 +20,189 @@ Consider again the logistic regression model in problem 2 from the previous comp
 
 (a) Implement (code!) a Gibbs sampler that simulates from the joint posterior $p(\omega, \beta|x)$ by augmenting the data with Polya-gamma latent variables $\omega_i, i = 1, \dots, n$. The full conditional posteriors are given on the slides from Lecture 7. Evaluate the convergence of the Gibbs sampler by calculating the Inefficiency Factors (IFs) and by plotting the trajectories of the sampled Markov chains.
 
-(b) Repeat the same task as in (a), but now only use the first m observations of the dataset. Do this for all $m \in \{10, 40, 80\}$.
 ```{r eval=TRUE}
+library(BayesLogit)
+library(mvtnorm)
+
+data = read.csv('Disease.csv')
+x <- as.matrix(data [, 1:6])
+y <- as.matrix(data [, 7])
+# initialize beta
+nDraws = 1000
+burnin <- 200       # Burn-in period
+
+n <- nrow(x)
+p <- ncol(x)
+
+beta <- rep(1, 6) # 5+1 intercept
+
+beta_samples <- matrix(NA, nDraws, p)
+
+set.seed(123)
+
+for (i in 1:nDraws) {
+  omega <- rpg(n, 1, x %*% beta)
+  k <- y - 1 / 2
+  B <- 9 * diag(6)
+  b <- rep(0, p)
+  # Conditional posterior for beta
+  
+  v_omg <- solve(t(x) %*% diag(omega) %*% x + solve(B))
+  m_omg <- v_omg %*% (t(x) %*% k + solve(B) %*% b)
+  
+  beta <- as.numeric(rmvnorm(1, mean = m_omg, sigma = v_omg))
+  beta_samples[i, ] <- beta
+}
+# Discard burn-in
+beta_samples <- beta_samples[(burnin + 1):nDraws, ]
+nPost <- nrow(beta_samples)
+
+par(mfrow = c(2, 3))  # 6 pics
+
+for (i in 1:p) {
+  plot(
+    beta_samples[, i],
+    type = 'l',
+    main = paste("Trace plot for β", i),
+    xlab = "Iteration",
+    ylab = paste("β", i)
+  )
+}
+
+
+max_lag <- 50  # set the max lag
+acfs <- matrix(NA, max_lag, p)
+
+for (i in 1:p) {
+  chain <- beta_samples[, i] - mean(beta_samples[, i])
+  var_chain <- mean(chain ^ 2)
+  for (j in 1:max_lag) {  # j as lag
+    # calculate the autocorrelation factor
+    acfs[j, i] <- sum(chain[1:(nPost - j)] * chain[(j + 1):nPost]) / nPost / var_chain
+    
+  }
+  
+}
+
+par(mfrow = c(2, 3))  # 6 pics
+
+for (i in 1:p) {
+  plot(
+    1:max_lag,
+    acfs[, i],
+    type = 'h',
+    main = paste("ACF for β", i),
+    xlab = "Lag",
+    ylab = "ACF"
+  )
+  abline(h = 0, col = "red", lty = 2)
+}
+
+# inefficiency factor (IF)
+IFs <- numeric(p)
+
+for (i in 1:p) {
+  IFs[i] <- 1 + 2 * sum(acfs[, i])
+  cat(paste("IF for β", i, "=", round(IFs[i], 2), "\n"))
+}
 
 ```
+Plots show that all efficient fluctrate around certain levels without any obvious tendency or any stuck. And calculated inefficiency factors are around 1, which means very sampling are performed with quite low dependency and the efficiency is very good.  
 
+(b) Repeat the same task as in (a), but now only use the first m observations of the dataset. Do this for all $m \in \{10, 40, 80\}$.
+
+```{r eval=TRUE}
+m <- c(10, 40, 80)
+for (z in 1:3) {
+  row_nr <- m[z]
+  data = read.csv('Disease.csv')
+  x <- as.matrix(data [1:row_nr, 1:6])
+  y <- as.matrix(data [1:row_nr, 7])
+  
+  # initialize beta
+nDraws = 1000
+burnin <- 200       # Burn-in period
+
+n <- nrow(x)
+p <- ncol(x)
+
+beta <- rep(1, 6) # 5+1 intercept
+
+beta_samples <- matrix(NA, nDraws, p)
+
+set.seed(123)
+
+for (i in 1:nDraws) {
+  omega <- rpg(n, 1, x %*% beta)
+  k <- y - 1 / 2
+  B <- 9 * diag(6)
+  b <- rep(0, p)
+  # Conditional posterior for beta
+  
+  v_omg <- solve(t(x) %*% diag(omega) %*% x + solve(B))
+  m_omg <- v_omg %*% (t(x) %*% k + solve(B) %*% b)
+  
+  beta <- as.numeric(rmvnorm(1, mean = m_omg, sigma = v_omg))
+  beta_samples[i, ] <- beta
+}
+# Discard burn-in
+beta_samples <- beta_samples[(burnin + 1):nDraws, ]
+nPost <- nrow(beta_samples)
+
+par(mfrow = c(2, 3))  # 6 pics
+
+for (i in 1:p) {
+  plot(
+    beta_samples[, i],
+    type = 'l',
+    main = paste("Trace plot for β", i , "with first ", row_nr),
+    xlab = "Iteration",
+    ylab = paste("β", i)
+  )
+}
+
+
+max_lag <- 50  # set the max lag
+acfs <- matrix(NA, max_lag, p)
+
+for (i in 1:p) {
+  chain <- beta_samples[, i] - mean(beta_samples[, i])
+  var_chain <- mean(chain ^ 2)
+  for (j in 1:max_lag) {  # j as lag
+    # calculate the autocorrelation factor
+    acfs[j, i] <- sum(chain[1:(nPost - j)] * chain[(j + 1):nPost]) / nPost / var_chain
+    
+  }
+  
+}
+
+par(mfrow = c(2, 3))  # 6 pics
+
+for (i in 1:p) {
+  plot(
+    1:max_lag,
+    acfs[, i],
+    type = 'h',
+    main = paste("ACF for β", i , "with first ", row_nr),
+    xlab = "Lag",
+    ylab = "ACF"
+  )
+  abline(h = 0, col = "red", lty = 2)
+}
+
+# inefficiency factor (IF)
+IFs <- numeric(p)
+
+for (i in 1:p) {
+  IFs[i] <- 1 + 2 * sum(acfs[, i])
+  cat(paste("IF for β", i, "=", round(IFs[i], 2), "with first ", row_nr, "\n"))
+}
+
+}
+```
+As for case 1 where we have 10 observations, there is a decreasing tendency noticed for $\beta4$ and the overall IF is comparatively high, thus it is not considered to converge. 
+
+For case 2 and 3 where there are 40 and 80 observations respectively, all plots have reached a stabilization and all parameters have a good IF factor. Thus convergence is thought to be reached.
 
 ## 2. Metropolis Random Walk for Poisson regression
 
