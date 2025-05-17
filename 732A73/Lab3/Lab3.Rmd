@@ -3,7 +3,7 @@ title: "Bayesian Learning - Computer Lab 3"
 output:
   pdf_document:
     latex_engine: lualatex
-date: "2025-0-13"
+date: "2025-05-13"
 author:
   - Liuxi Mei
   - Xiaochen Liu
@@ -417,7 +417,7 @@ bidden <- c(1,1,0,1,0,1,0,1.3,0.7) # intercept as 1 to include it
 lambda <- exp(possion_samp[(burnin+1):ndraws,] %*% bidden)
 
 res <-rep(NA,length(lambda))
-
+set.seed(124)
 for (i in 1:length(lambda)) {
   res[i] <- rpois(1, lambda[i])
 }
@@ -527,7 +527,7 @@ warmup <- 50
 niter <- 2000
 fit <- stan(model_code=StanModel,data=data, warmup=warmup,iter=niter,chains=4)
 # Print the fitted model
-print(fit,digits_summary=3)
+#print(fit,digits_summary=3)
 # Extract posterior samples
 postDraws <- extract(fit)
 # Do traceplots of the first chain
@@ -543,7 +543,7 @@ pairs(fit)
 ```{r eval=TRUE}
 summary_fit <- summary(fit, pars = c("mu", "phi", "sigma"))$summary
 # extract the mean, 95% CI and effective posterior sample
-posterior_summary <- summary_fit[, c("mean", "2.5%", "97.5%", "n_eff")]
+posterior_summary <- summary_fit[, c("mean", "2.5%", "97.5%", "n_eff" , "Rhat")]
 print(round(posterior_summary, 3))
 
 ```
@@ -593,7 +593,7 @@ warmup <- 50
 niter <- 2000
 fit <- stan(model_code=StanModel,data=data, warmup=warmup,iter=niter,chains=4)
 # Print the fitted model
-print(fit,digits_summary=3)
+#print(fit,digits_summary=3)
 # Extract posterior samples
 postDraws <- extract(fit)
 # Do traceplots of the first chain
@@ -608,7 +608,7 @@ pairs(fit)
 ```{r eval=TRUE}
 summary_fit <- summary(fit, pars = c("mu", "phi", "sigma"))$summary
 # extract the mean, 95% CI and effective posterior sample
-posterior_summary <- summary_fit[, c("mean", "2.5%", "97.5%", "n_eff")]
+posterior_summary <- summary_fit[, c("mean", "2.5%", "97.5%", "n_eff", "Rhat")]
 print(round(posterior_summary, 3))
 ```
 Mean, 95% CI and effective posterior sample number are shown as above. 
@@ -623,5 +623,4 @@ plot(posterior_samples$mu, posterior_samples$phi,
 ```
 
 Both cases have Rhat values < 1.05, meaning all chains are well- mixed and agree. Besides,  the traceplots have shown no stickiness and no drift. Thus, convergence is considered reached for both $\phi$ values.  
-When $\phi$ is equal to 0.4, $\mu$ and $\phi$ is low correlated (cloud-shape plot) and moderate correlated (diagonal elliptical shape) when $\phi$ is 0.98. This is due to the near-nonstationary behavior of the AR(1) process when φ is close to 1.
-We can conclude that even if convergence is good or acceptable, it does not necessarily mean a good sample for the posterior.
+When $\phi$ is equal to 0.4, $\mu$ and $\phi$ is low correlated (cloud-shape plot) and moderate correlated (diagonal elliptical shape) when $\phi$ is 0.98. This is due to the near-nonstationary behavior of the AR(1) process when $\phi$ is close to 1. We can conclude that even if convergence is good or acceptable, it does not necessarily mean a good sample for the posterior.
