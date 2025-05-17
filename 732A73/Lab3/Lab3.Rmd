@@ -18,7 +18,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Consider again the logistic regression model in problem 2 from the previous computer lab 2. Use the prior $\beta \sim \mathcal{N}(0, \tau^2 I)$, where $\tau = 3$.
 
-(a) Implement (code!) a Gibbs sampler that simulates from the joint posterior $p(\omega, \beta|x)$ by augmenting the data with Polya-gamma latent variables $\omega_i, i = 1, \dots, n$. The full conditional posteriors are given on the slides from Lecture 7. Evaluate the convergence of the Gibbs sampler by calculating the Inefficiency Factors (IFs) and by plotting the trajectories of the sampled Markov chains.
+### (a)
+
+Implement (code!) a Gibbs sampler that simulates from the joint posterior $p(\omega, \beta|x)$ by augmenting the data with Polya-gamma latent variables $\omega_i, i = 1, \dots, n$. The full conditional posteriors are given on the slides from Lecture 7. Evaluate the convergence of the Gibbs sampler by calculating the Inefficiency Factors (IFs) and by plotting the trajectories of the sampled Markov chains.
 
 ```{r eval=TRUE}
 library(BayesLogit)
@@ -107,9 +109,14 @@ for (i in 1:p) {
 }
 
 ```
-Plots show that all efficient fluctrate around certain levels without any obvious tendency or any stuck. And calculated inefficiency factors are around 1, which means very sampling are performed with quite low dependency and the efficiency is very good.  
 
-(b) Repeat the same task as in (a), but now only use the first m observations of the dataset. Do this for all $m \in \{10, 40, 80\}$.
+Plots show that all efficient fluctrate around certain levels without any obvious tendency or any stuck. And calculated inefficiency factors are around 1, which means very sampling are performed with quite low dependency and the efficiency is very good.
+
+------------------------------------------------------------------------
+
+### (b)
+
+Repeat the same task as in (a), but now only use the first m observations of the dataset. Do this for all $m \in \{10, 40, 80\}$.
 
 ```{r eval=TRUE}
 m <- c(10, 40, 80)
@@ -200,46 +207,58 @@ for (i in 1:p) {
 
 }
 ```
-As for case 1 where we have 10 observations, there is a decreasing tendency noticed for $\beta4$ and the overall IF is comparatively high, thus it is not considered to converge. 
+
+As for case 1 where we have 10 observations, there is a decreasing tendency noticed for $\beta4$ and the overall IF is comparatively high, thus it is not considered to converge.
 
 For case 2 and 3 where there are 40 and 80 observations respectively, all plots have reached a stabilization and all parameters have a good IF factor. Thus convergence is thought to be reached.
 
+------------------------------------------------------------------------
 
 ## 2. Metropolis Random Walk for Poisson regression
 
 Consider the following Poisson regression model:
 
-\[
+$$
 y_i | \beta \sim \text{Poisson}\left( \exp(x_i^T \beta) \right), \quad i = 1, \dots, n,
-\]
+$$
 
 where $y_i$ is the count for the $i$th observation in the sample and $x_i$ is the $p$-dimensional vector with covariate observations for the $i$th observation.
 
 The dataset contains observations from 700 eBay auctions of coins. The response variable is `nBids` and records the number of bids in each auction. The remaining variables are features/covariates ($x$):
 
-- **Const**: Intercept
-- **PowerSeller**: Equal to 1 if the seller is selling large volumes on eBay
-- **VerifyID**: Equal to 1 if the seller is a verified seller by eBay
-- **Sealed**: Equal to 1 if the coin was sold in an unopened envelope
-- **MinBlem**: Equal to 1 if the coin has a minor defect
-- **MajBlem**: Equal to 1 if the coin has a major defect
-- **LargNeg**: Equal to 1 if the seller received a lot of negative feedback from customers
-- **LogBook**: Logarithm of the book value of the auctioned coin according to expert sellers (Standardized)
-- **MinBidShare**: Ratio of the minimum selling price (starting price) to the book value (Standardized).
+-   **Const**: Intercept
+-   **PowerSeller**: Equal to 1 if the seller is selling large volumes on eBay
+-   **VerifyID**: Equal to 1 if the seller is a verified seller by eBay
+-   **Sealed**: Equal to 1 if the coin was sold in an unopened envelope
+-   **MinBlem**: Equal to 1 if the coin has a minor defect
+-   **MajBlem**: Equal to 1 if the coin has a major defect
+-   **LargNeg**: Equal to 1 if the seller received a lot of negative feedback from customers
+-   **LogBook**: Logarithm of the book value of the auctioned coin according to expert sellers (Standardized)
+-   **MinBidShare**: Ratio of the minimum selling price (starting price) to the book value (Standardized).
 
-### (a) 
+### (a)
 
 Obtain the maximum likelihood estimator of $\beta$ in the Poisson regression model for the eBay data. [Hint: `glm.R`, don't forget that `glm()` adds its own intercept so don't input the covariate `Const`.] Which covariates are significant?
 
 ```{r eval=TRUE}
 rm(list=ls())
 
-data <-read.table('eBayNumberOfBidderData_2025.dat')
-y<- matrix(as.numeric(data$V1), ncol=1)
-x<- as.matrix(data[, 2:10])
-x[,8:9] <- as.numeric(x[,8:9])
+data <-read.table('eBayNumberOfBidderData_2025.dat', header = FALSE, skip = 1)
+
+colnames(data) <- c("nBids", "Const", "PowerSeller", "VerifyID", "Sealed", "MinBlem", "MajBlem", "LargNeg", "LogBook", "MinBidShare")
+
+# Fit Poisson regression model (excluding Const)
+
+model <- glm(nBids ~ . - Const, family = poisson, data = data)
+summary(model)
 ```
-### (b) 
+
+Lower P value means higher significance, as is shown, significant covariants are VerifyID and MinBidShare.
+
+------------------------------------------------------------------------
+
+### (b)
+
 Let's do a Bayesian analysis of the Poisson regression. Let the prior be $\beta \sim \mathcal{N}(0, 100 \cdot (X^\top X)^{-1})$, where $X$ is the $n \times p$ covariate matrix. This is a commonly used prior, which is called Zellner's g-prior. Assume first that the posterior density is approximately multivariate normal:
 
 $$
@@ -250,7 +269,39 @@ where $\tilde{\beta}$ is the posterior mode and $J_y(\tilde{\beta})$ is the nega
 
 $\tilde{\beta}$ and $J_y(\tilde{\beta})$ can be obtained by numerical optimization (`optim.R`) exactly like you already did for the logistic regression in Lab 2 (but with the log posterior function replaced by the corresponding one for the Poisson model, which you have to code up).
 
-### (c) 
+```{r eval=TRUE}
+
+y<- matrix(data$nBids, ncol=1)
+x<- as.matrix(data[, 2:10])
+
+LogPostPossion <- function(beta,y,X){
+  beta <- as.numeric(beta)
+  lin_pred <- X %*% beta
+  p = length(beta)
+  
+  # Poisson log-likelihood
+  log_lik <- sum(y * lin_pred - exp(lin_pred))
+  
+  # Zellner's g-prior: beta ~ N(0, 100 * (X^T X)^-1)
+  log_prior = dmvnorm(beta, rep(0, p), 100*solve(t(X)%*%X), log=TRUE);
+  return(log_lik + log_prior)
+}
+
+OptimRes <- optim(par = rep(0, ncol(x)), 
+                fn = LogPostPossion, 
+                X = x, y = y,
+                method = "BFGS", 
+                control = list(fnscale = -1, maxit = 1000),
+                hessian = TRUE)
+approxPostMode <- matrix(OptimRes$par,1,9)
+cov_matrix <- solve(-OptimRes$hessian)# J^{-1}
+
+```
+
+------------------------------------------------------------------------
+
+### (c)
+
 Let's simulate from the actual posterior of $\beta$ using the Metropolis algorithm and compare the results with the approximate results in (b). Program a general function that uses the Metropolis algorithm to generate random draws from an arbitrary posterior density. In order to show that it is a general function for any model, we denote the vector of model parameters by $\theta$. Let the proposal density be the multivariate normal density mentioned in Lecture 8 (random walk Metropolis):
 
 $$
@@ -261,61 +312,316 @@ where $\Sigma = J_y^{-1}(\tilde{\beta})$ was obtained in (b). The value $c$ is a
 
 Now, use your new Metropolis function to sample from the posterior of $\beta$ in the Poisson regression for the eBay dataset. Assess MCMC convergence by graphical methods.
 
-### (d) 
-Use the MCMC draws from (c) to simulate from the predictive distribution of  
-the number of bidders in a new auction with the characteristics below. Plot  
-the predictive distribution. What is the probability of no bidders in this new  
-auction?
+```{r eval=TRUE}
 
-- PowerSeller = 1  
-- VerifyID = 0  
-- Sealed = 1  
-- MinBlem = 0  
-- MajBlem = 1  
-- LargNeg = 0  
-- LogBook = 1.3  
-- MinBidShare = 0.7  
+mp_sim <- function(c, LogPostFunc, ndraws, theta_init, sigma) {
+  p <- length(theta_init)
+  theta_mat <- matrix(NA, ndraws, p)
+  theta_mat[1, ] <- theta_init
+  
+  for (i in 2:ndraws) {
+    theta_new <- rmvnorm(1, theta_mat[i - 1, ], c * sigma)
+    
+    log_post_new <- LogPostFunc(theta_new, y = y, X = x)
+    log_post_old <- LogPostFunc(theta_mat[i - 1, ], y = y, X = x)
+    
+    acc_prob <- min(1, exp(log_post_new - log_post_old))
+    
+    if (acc_prob > runif(1)) {
+      theta_mat[i, ] <- theta_new
+    } else {
+      theta_mat[i, ] <- theta_mat[i - 1, ]
+    }
+  }
+  
+  return(theta_mat)
+}
+```
+
+```{r eval=TRUE}
+set.seed(123)
+possion_samp <- mp_sim(1,LogPostFunc = LogPostPossion, 
+                       ndraws=10000, 
+                       theta_init=OptimRes$par, 
+                       sigma=cov_matrix)
+```
+
+```{r eval=TRUE}
+par(mfrow = c(3, 3))  # 9 pics
+p <- length(OptimRes$par)
+burnin <- 2000
+
+for (i in 1:p) {
+  plot(
+    1:(dim(possion_samp)[1]-burnin),
+    possion_samp[(burnin+1):nrow(possion_samp), i],
+    type = 'l',
+    main = paste("Trajectories for β", i),
+    xlab = "Iteration",
+    ylab = "value"
+  )
+  abline(h = 0, col = "red", lty = 2)
+}
+```
+
+```{r eval=TRUE}
+
+ndraws <- nrow(possion_samp)
+draw_plot <- ndraws-burnin
+for (j in 1:9) {
+  param_index <- j  # choose the ith param
+
+mean_vec <- numeric(draw_plot)
+sd_vec <- numeric(draw_plot)
+
+for (i in 1:draw_plot) {
+  samples_so_far <- possion_samp[(burnin+1):(i+burnin),param_index]
+  mean_vec[i] <- mean(samples_so_far)
+  sd_vec[i] <- sd(samples_so_far)
+}
+
+
+par(mfrow=c(2,1))
+
+plot(1:draw_plot, mean_vec, type='l', col='blue', lwd=2,
+     xlab='Iteration', ylab='Mean',
+     main=paste('Mean of parameter', param_index, 'vs iteration'))
+
+plot(1:draw_plot, sd_vec, type='l', col='red', lwd=2,
+     xlab='Iteration', ylab='Standard Deviation',
+     main=paste('Standard Deviation of parameter', param_index, 'vs iteration'))
+}
+
+
+```
+
+Since trajectories and the mean and standard deviation for different parameters are stable, convergence is thus considered reached.
+
+------------------------------------------------------------------------
+
+### (d)
+
+Use the MCMC draws from (c) to simulate from the predictive distribution of the number of bidders in a new auction with the characteristics below. Plot the predictive distribution. What is the probability of no bidders in this new auction?
+
+-   PowerSeller = 1\
+-   VerifyID = 0\
+-   Sealed = 1\
+-   MinBlem = 0\
+-   MajBlem = 1\
+-   LargNeg = 0\
+-   LogBook = 1.3\
+-   MinBidShare = 0.7
+
+```{r eval=TRUE}
+bidden <- c(1,1,0,1,0,1,0,1.3,0.7) # intercept as 1 to include it 
+lambda <- exp(possion_samp[(burnin+1):ndraws,] %*% bidden)
+
+res <-rep(NA,length(lambda))
+
+for (i in 1:length(lambda)) {
+  res[i] <- rpois(1, lambda[i])
+}
+
+hist(res)
+prob_0 <- sum(res ==0)/length(lambda)
+print(prob_0)
+```
+
+------------------------------------------------------------------------
 
 ## 3.Time series models in Stan
-## (a) Simulating an AR(1) Process
 
-Write a function in R that simulates data from the AR(1) process:
+### (a)
+
+Write a function in R that simulates data from the AR(1)-process
 
 $$
-x_t = \\mu + \\phi (x_{t-1} - \\mu) + \\varepsilon_t, \\quad \\varepsilon_t \\overset{\\text{iid}}{\\sim} \\mathcal{N}(0, \\sigma^2),
+x_t = \mu + \phi (x_{t-1} - \mu) + \varepsilon_t, \quad \varepsilon_t \overset{iid}{\sim} \mathcal{N}(0, \sigma^2),
 $$
 
-for given values of $\\mu$, $\\phi$, and $\\sigma^2$. Start the process at $x_1 = \\mu$ and then simulate values for $x_t$ for $t = 2, 3, \\dots, T$, and return the vector $x_{1:T}$ containing all time points.
+for given values of $\mu$, $\phi$ and $\sigma^2$. Start the process at $x_1 = \mu$ and then simulate values for $x_t$ for $t = 2, 3, \ldots, T$ and return the vector $x_{1:T}$ containing all time points. Use $\mu = 5$, $\sigma^2 = 9$, and $T = 300$ and look at some different realizations (simulations) of $x_{1:T}$ for values of $\phi$ between $-1$ and $1$ (this is the interval of $\phi$ where the AR(1)-process is stationary). Include a plot of at least one realization in the report. What effect does the value of $\phi$ have on $x_{1:T}$?
 
-Use $\\mu = 5$, $\\sigma^2 = 9$, and $T = 300$, and look at some different realizations (simulations) of $x_{1:T}$ for values of $\\phi$ between $-1$ and $1$ (this is the interval of $\\phi$ where the AR(1) process is stationary). Include a plot of at least one realization in the report.
+```{r eval=TRUE}
+rm(list=ls())
+#define the function
 
-**What effect does the value of $\\phi$ have on $x_{1:T}$?**
+ar <- function (mu, phi, sig2, T) {
+  res<- c()
+  x<- mu 
+  res<-x
+  for (t in 2:T) {
+    x_new <- mu + phi*(x-mu)+rnorm(1,0,sqrt(sig2))
+    res<- c(res,x_new)
+    x<- x_new
+  }
+  return(res)
+}
 
----
+#simulate
+set.seed(123)
+p <- seq(-1,1,0.1)
+res <- matrix(NA,nrow=300, ncol=length(p))
+for (i in 1:length(p)) {
+  res[,i] <-ar (mu=5, phi=p[i], sig2=9, T=300)
 
-## (b) Bayesian Inference for AR(1) Parameters
+}
 
-Use your function from (a) to simulate two AR(1) processes:
+```
 
-- $x_{1:T}$ with $\\phi = 0.4$
-- $y_{1:T}$ with $\\phi = 0.98$
+```{r eval=TRUE}
+nplot <- seq(3,21,3)
+par(mfrow = c(1, 2))  # 6 pics
+for (i in nplot) {
+  plot(res[,i], type='l', col='blue', lwd=2,
+     xlab='Iteration', ylab='x value',
+     main=paste('x changes with',p[i], 'as phi'))
+}
+```
+$\phi$ controls the strength of autocorrelation. $\phi$ with small absolute value gives weak correlation and values fulctuate quickly. 
 
-Now, treat your simulated vectors as synthetic data, and treat the values of $\\mu$, $\\phi$, and $\\sigma^2$ as unknown parameters. Implement **Stan code** that samples from the posterior of the three parameters, using suitable non-informative priors of your choice.
+------------------------------------------------------------------------
 
-> **Hint:** Look at the time-series models examples in the Stan User's Guide/Reference Manual, and note the different parameterization used here.
+### (b) 
 
-### (i) Posterior Summaries
+Use your function from (a) to simulate two AR(1)-processes, $x_{1:T}$ with $\phi = 0.4$ and $y_{1:T}$ with $\phi = 0.98$. Now, treat your simulated vectors as synthetic data, and treat the values of $\mu$, $\phi$ and $\sigma^2$ as unknown parameters. Implement Stan-code that samples from the posterior of the three parameters, using suitable non-informative priors of your choice.
 
-Report the **posterior mean**, **95% credible intervals**, and the **number of effective posterior samples** for the three inferred parameters for each of the simulated AR(1) processes.  
-**Are you able to estimate the true values?**
+> *Hint:* Look at the time-series models examples in the Stan user's guide/reference manual, and note the different parameterization used here.
 
-### (ii) Convergence and Joint Posterior
+i.  Report the posterior mean, 95% credible intervals, and the number of effective posterior samples for the three inferred parameters for each of the simulated AR(1)-processes. Are you able to estimate the true values?
 
-For each of the two data sets:
+ii. For each of the two data sets, evaluate the convergence of the samplers and plot the joint posterior of $\mu$ and $\phi$. Comments?
 
-- Evaluate the **convergence** of the samplers.
-- Plot the **joint posterior** of $\\mu$ and $\\phi$.
+```{r eval=TRUE}
+set.seed(123)
+ar1 <- ar(mu=5, phi=0.4, sig2=9, T=300)
+ar2 <- ar(mu=5, phi=0.98, sig2=9, T=300)
 
-**Comments?**
+library(rstan)
+y=ar1
+N=length(y)
+
+StanModel = '
+data {
+  int<lower=0> N; // Number of observations
+  vector[N] y; // Number of flowers
+}
+parameters {
+  real mu;
+  real<lower=-1, upper=1> phi;
+  real<lower=0> sigma;
+}
+model {
+  mu ~ normal(0, 5);
+  phi ~ uniform(-1,1);
+  sigma ~ normal(3, 3); // Normal with mean 3, st.dev. 3  It is normal (mean, sd_dev) in stan
+  
+  for(i in 2:N){
+    y[i]~ normal(mu+ phi*(y[i-1] - mu), sigma);
+  }
+}'
 
 
+
+data <- list(N=N, y=y)
+warmup <- 50
+niter <- 2000
+fit <- stan(model_code=StanModel,data=data, warmup=warmup,iter=niter,chains=4)
+# Print the fitted model
+print(fit,digits_summary=3)
+# Extract posterior samples
+postDraws <- extract(fit)
+# Do traceplots of the first chain
+par(mfrow = c(1,1))
+plot(postDraws$mu[1:(niter-warmup)],type="l",ylab="mu",main="Traceplot")
+# Do automatic traceplots of all chains
+traceplot(fit)
+# Bivariate posterior plots
+pairs(fit)
+
+```
+
+```{r eval=TRUE}
+summary_fit <- summary(fit, pars = c("mu", "phi", "sigma"))$summary
+# extract the mean, 95% CI and effective posterior sample
+posterior_summary <- summary_fit[, c("mean", "2.5%", "97.5%", "n_eff")]
+print(round(posterior_summary, 3))
+
+```
+
+Mean, 95% CI and effective posterior sample number are shown as above. 
+The simulated parameter values are quite close to the true parameter values and the true parameter lies in the 95% CI of simulated parameter values, thus we are able to estimate the true values.
+
+```{r eval=TRUE}
+posterior_samples <- as.data.frame(rstan::extract(fit, pars = c("mu", "phi")))
+
+plot(posterior_samples$mu, posterior_samples$phi,
+     xlab = expression(mu), ylab = expression(phi),
+     main = "Joint Posterior of μ and φ", pch = 20, col = rgb(0, 0, 1, 0.3))
+
+```
+
+------------------------------------------------------------------------
+
+```{r eval=TRUE}
+y=ar2
+N=length(y)
+
+StanModel = '
+data {
+  int<lower=0> N; // Number of observations
+  vector[N] y; // Number of flowers
+}
+parameters {
+  real mu;
+  real<lower=-1, upper=1> phi;
+  real<lower=0> sigma;
+}
+model {
+  mu ~ normal(0, 5);
+  phi ~ uniform(-1,1);
+  sigma ~ normal(3, 3); // Normal with mean 3, st.dev. 3
+  
+  for(i in 2:N){
+    y[i]~ normal(mu+ phi*(y[i-1] - mu), sigma);
+  }
+}'
+
+
+
+data <- list(N=N, y=y)
+warmup <- 50
+niter <- 2000
+fit <- stan(model_code=StanModel,data=data, warmup=warmup,iter=niter,chains=4)
+# Print the fitted model
+print(fit,digits_summary=3)
+# Extract posterior samples
+postDraws <- extract(fit)
+# Do traceplots of the first chain
+par(mfrow = c(1,1))
+plot(postDraws$mu[1:(niter-warmup)],type="l",ylab="mu",main="Traceplot")
+# Do automatic traceplots of all chains
+traceplot(fit)
+# Bivariate posterior plots
+pairs(fit)
+```
+
+```{r eval=TRUE}
+summary_fit <- summary(fit, pars = c("mu", "phi", "sigma"))$summary
+# extract the mean, 95% CI and effective posterior sample
+posterior_summary <- summary_fit[, c("mean", "2.5%", "97.5%", "n_eff")]
+print(round(posterior_summary, 3))
+```
+Mean, 95% CI and effective posterior sample number are shown as above. 
+Despite simulated phi and sigma values are quite close to the true values and the true values lie in the 95% CI, the simulated mean gives too wide 95% CI, making it unable to make a estimate of it. This shows that the data provide little information about μ, and the estimate of μ is not very precise.
+
+```{r eval=TRUE}
+posterior_samples <- as.data.frame(rstan::extract(fit, pars = c("mu", "phi")))
+
+plot(posterior_samples$mu, posterior_samples$phi,
+     xlab = expression(mu), ylab = expression(phi),
+     main = "Joint Posterior of μ and φ", pch = 20, col = rgb(0, 0, 1, 0.3))
+```
+
+Both cases have Rhat values < 1.05, meaning all chains are well- mixed and agree. Besides,  the traceplots have shown no stickiness and no drift. Thus, convergence is considered reached for both $\phi$ values.  
+When $\phi$ is equal to 0.4, $\mu$ and $\phi$ is low correlated (cloud-shape plot) and moderate correlated (diagonal elliptical shape) when $\phi$ is 0.98. This is due to the near-nonstationary behavior of the AR(1) process when φ is close to 1.
+We can conclude that even if convergence is good or acceptable, it does not necessarily mean a good sample for the posterior.
