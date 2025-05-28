@@ -17,7 +17,7 @@ editor_options:
 
 Let $y_1, \ldots, y_n \mid \theta \sim \text{Bern}(\theta)$, and assume that you have obtained a sample with $f = 35$ failures in $n = 78$ trials. Assume a $\text{Beta}(\alpha_0, \beta_0)$ prior for $\theta$ and let $\alpha_0 = \beta_0 = 7$.
 
-### (a) Convergence of Posterior Mean and Standard Deviation 
+### (a) Convergence of Posterior Mean and Standard Deviation
 
 Draw 10000 random values (nDraws = 10000) from the posterior $\theta \mid y \sim \text{Beta}(\alpha_0 + s, \beta_0 + f)$, where $y = (y_1, \ldots, y_n)$, and verify graphically that the posterior mean $\mathbb{E}[\theta \mid y]$ and standard deviation $\text{SD}[\theta \mid y]$ converges to the true values as the number of random draws grows large.
 
@@ -44,7 +44,7 @@ abline(h=sqrt(50*42/(50+42)^2/(42+50+1)),col ='red')
 
 ```
 
-### (b)  Posterior Probability Pr(theta > 0.5|y) 
+### (b) Posterior Probability Pr(theta \> 0.5\|y)
 
 Draw 10000 random values from the posterior to compute the posterior probability\
 $\Pr(\theta > 0.5 \mid y)$ and compare with the exact value from the Beta posterior. [Hint: use `pbeta()` to calculate the exact value].
@@ -73,7 +73,7 @@ print(tr_pr)
 
 The sampling gives very similar values comparing with the exact value from Beta posterior.
 
-### (c) Posterior Distribution of Odds theta = theta / (1 - theta) 
+### (c) Posterior Distribution of Odds theta = theta / (1 - theta)
 
 Draw 10000 random values from the posterior of the odds $\phi = \frac{\theta}{1 - \theta}$ by using the previous random draws from the Beta posterior for $\theta$ and plot the posterior distribution of $\phi$. [Hint: `hist()` and `density()` can be utilized].
 
@@ -83,7 +83,7 @@ hist(odds, breaks = 30, freq = FALSE,probability = TRUE, main = "Posterior of Od
 lines(density(odds), col = "blue", lwd = 2)
 ```
 
-## 2. Log-normal distribution and the Gini coefficient 
+## 2. Log-normal distribution and the Gini coefficient
 
 Assume that you have asked 8 randomly selected persons about their monthly income (in thousands Swedish Krona) and obtained the following eight observations:
 
@@ -101,7 +101,7 @@ $$
 \tau^2 = \frac{ \sum_{i=1}^{n} (\log y_i - \mu)^2 }{n}.
 $$
 
-### (a) Draw 10000 random values from the posterior of sigma^2 and plot 
+### (a) Draw 10000 random values from the posterior of sigma\^2 and plot
 
 Draw 10000 random values from the posterior of $\sigma^2$ by assuming $\mu = 3.65$ and plot the posterior distribution.
 
@@ -127,32 +127,27 @@ hist(samp, breaks = 40, freq = FALSE, ylim = c(0, 4))
 lines(density(samp), col = "blue", lwd = 2)
 
 ```
-### (a.1) Prior Interpretation for the Posterior of $\sigma^2$
 
-In this model, we assume that the data $y_1, \ldots, y_n$ are independent and identically distributed from a log-normal distribution:  
+### ? Prior Interpretation for the Posterior of $\sigma^2$
+
+In this model, we assume that the data $y_1, \ldots, y_n$ are independent and identically distributed from a log-normal distribution:\
 $y_i \sim \log N(\mu, \sigma^2)$, where $\mu = 3.65$ is assumed to be known, and $\sigma^2$ is unknown.
 
-For the prior on $\sigma^2$, we use a common non-informative prior:  
-$p(\sigma^2) \propto 1/\sigma^2$.  
+For the prior on $\sigma^2$, we use a common non-informative prior:\
+$p(\sigma^2) \propto 1/\sigma^2$.\
 This prior is improper but commonly used in Bayesian analysis because it reflects ignorance about the scale of $\sigma^2$, and is equivalent to assuming a flat prior on $\log \sigma^2$.
 
 This prior corresponds to a scaled inverse chi-squared distribution with prior degrees of freedom $\nu_0 = 0$, and prior scale parameter $\sigma_0^2$ undefined (since it contributes no information). Under this prior, the posterior distribution becomes:
 
-\[
+$$
 \sigma^2 \mid y \sim \text{Scale-inv-}\chi^2(n, \tau^2),
-\]
-where
-\[
-\tau^2 = \frac{1}{n} \sum_{i=1}^n (\log y_i - \mu)^2.
-\]
+$$ where $$\tau^2 = \frac{1}{n} \sum_{i=1}^n (\log y_i - \mu)^2.$$
 
 This result can be seen as a special case of the conjugate prior-posterior relationship for the normal model when the prior is non-informative. The posterior degrees of freedom are entirely determined by the number of observations $n$, and the posterior scale is simply the sample variance of the log-transformed data.
 
-
-### (b) Compute the posterior distribution of the Gini coefficient G 
+### (b) Compute the posterior distribution of the Gini coefficient G
 
 The most common measure of income inequality is the Gini coefficient, $G$, where $0 \leq G \leq 1$. $G = 0$ means a completely equal income distribution, whereas $G = 1$ means complete income inequality (see e.g. Wikipedia for more information about the Gini coefficient). It can be shown that $G = 2\Phi\left( \frac{\sigma}{\sqrt{2}} \right) - 1$ when incomes follow a $\log N(\mu, \sigma^2)$ distribution. $\Phi(z)$ is the cumulative distribution function (CDF) for the standard normal distribution with mean zero and unit variance. Use the posterior draws in a) to compute the posterior distribution of the Gini coefficient $G$ for the current data set.
-
 
 Part (a) has given information about the posterior distribution of $\sigma^2$: $\sigma^2 \mid y_1, \ldots, y_n \overset{\text{iid}}{\sim} \text{Scale-inv-}\chi^2(n, \tau^2)$,
 
@@ -165,7 +160,7 @@ lines(density(G), col = "blue", lwd = 2)
 
 ```
 
-### (c) Compute a 95% equal tail credible interval for G 
+### (c) Compute a 95% equal tail credible interval for G
 
 Use the posterior draws from b) to compute a 95% equal tail credible interval for $G$. A 95% equal tail credible interval $(a, b)$ cuts off 2.5% percent of the posterior probability mass to the left of $a$, and 2.5% to the right of $b$.
 
@@ -175,7 +170,7 @@ ci95 <- quantile(G, probs = c(0.025, 0.975))
 ci95
 ```
 
-### (d) Compute a 95% Highest Posterior Density Interval (HPDI) for G 
+### (d) Compute a 95% Highest Posterior Density Interval (HPDI) for G
 
 Use the posterior draws from b) to compute a 95% Highest Posterior Density Interval (HPDI) for $G$. Compare the two intervals in (c) and (d). [Hint: Use the `hdi()` function from the `bayestestR` package.]
 
@@ -187,7 +182,7 @@ hdi(G, ci= 0.95)
 
 For a non symmetrical distribution where the most probability mass lies in the left side, as in this case, Highest Posterior Density Interval (HPDI) takes much probability mass from the left side comparing with qual tail credible interval. Since HPDI concentrates on part with highest probability mass, it always has a narrower interval than equal tail credible interval.
 
-## 3. Bayesian inference for the rate parameter in the Poisson distribution 
+## 3. Bayesian inference for the rate parameter in the Poisson distribution
 
 This exercise aims to show you that a grid approximation can be used to obtain information of the posterior distribution when the distributions for prior and posterior are not conjugate. In some cases, it is sufficient to evaluate the posterior pdf $p(\lambda \mid y)$ at a finite set of $\lambda$ values to understand its structure and obtain important quantities.
 
@@ -201,7 +196,7 @@ $$
 
 and the scale parameter that is set to be $\sigma = 5$.
 
-### (a) Posterior Distribution Plot for the Average Goals Rate Parameter λ 
+### (a) Posterior Distribution Plot for the Average Goals Rate Parameter λ
 
 Derive the expression for what the posterior pdf $p(\lambda \mid y, \sigma)$ is proportional to. Then, plot the posterior distribution of the average goals rate parameter $\lambda$ over a fine grid of $\lambda$ values. [Hint: you need to normalize the posterior pdf $p(\lambda \mid y, \sigma)$ so that it integrates to one.]
 
@@ -218,15 +213,13 @@ $$
 
 And the prior is assumed to be a Half-normal distribution:
 
-\[
-p(\lambda \mid \sigma) = \frac{\sqrt{2}}{\sigma \sqrt{\pi}} \exp\left( -\frac{\lambda^2}{2\sigma^2} \right), \quad \lambda \geq 0.
-\]
+$$ p(\lambda \mid \sigma) = \frac{\sqrt{2}}{\sigma \sqrt{\pi}} \exp\left( -\frac{\lambda^2}{2\sigma^2} \right), \quad \lambda \geq 0. $$
 
 Combining the likelihood and the prior, the posterior distribution is proportional to:
 
-\[
+$$
 p(\lambda \mid y, \sigma) \propto e^{-n\lambda} \cdot \lambda^{\sum y_i} \cdot \exp\left( -\frac{\lambda^2}{2\sigma^2} \right).
-\]
+$$
 
 ```{r eval=TRUE}
 rm(list= ls())
@@ -247,16 +240,16 @@ res <- p(var) / sum(p(var) * 0.001)  # here have to also divide by the steps
 plot(var, res, type = "l", col = "blue")
 ```
 
- 
-### (b) Posterior Mode 
+### (b) Posterior Mode
 
-Find the (approximate) posterior mode of $\lambda$ from the information in a) 
+Find the (approximate) posterior mode of $\lambda$ from the information in a)
 
-The posterior mode of \( \lambda \) is the value that maximizes the posterior distribution, i.e.,
+The posterior mode of $\lambda$ is the value that maximizes the posterior distribution, i.e.,
 
-\[
+$$
 \lambda_{\text{mode}} = \arg \max_{\lambda > 0} p(\lambda \mid y, \sigma).
-\]
+$$
+
 ```{r eval=TRUE}
 opt_lambda <- var[which.max(res)]
 print (opt_lambda)
@@ -264,8 +257,19 @@ print (opt_lambda)
 
 The (approximate) posterior mode of $\lambda$ is 3.364.
 
+#### ? Posterior Mode
 
-## 4. Linear and polynomial regression  
+The posterior mode of $\lambda$ is defined as the value that maximizes the posterior distribution:
+
+$$
+\lambda_{\text{mode}} = \arg \max_{\lambda > 0} p(\lambda \mid y, \sigma).
+$$
+
+In Bayesian statistics, the posterior distribution $p(\lambda \mid y, \sigma)$ represents our updated belief about the parameter $\lambda$ after observing the data $y$. The mode of this distribution is the most probable value — that is, the value of $\lambda$ with the highest posterior density. This is also known as the maximum a posteriori (MAP) estimate.
+
+Using the posterior mode as a point estimate is particularly useful when the posterior distribution is skewed or not symmetric, as it provides a single, most likely value for the parameter rather than relying on the mean or median, which may not be representative in such cases.
+
+## 4. Linear and polynomial regression
 
 The dataset `temp_linkoping.csv` contains daily average temperatures (in degree Celsius) in Linköping between July 2023 and June 2024. Import the dataset in R.\
 The response variable is `temp` and the covariate `time`, which is defined as
@@ -280,7 +284,7 @@ $$
 \text{temp} = \beta_0 + \beta_1 \cdot \text{time} + \beta_2 \cdot \text{time}^2 + \varepsilon, \quad \varepsilon \overset{\text{iid}}{\sim} \mathcal{N}(0, \sigma^2).
 $$\
 
-#### (a) Prior Specification and Prior Predictive Check for Quadratic Model  
+#### (a) Prior Specification and Prior Predictive Check for Quadratic Model
 
 Use the conjugate prior for the linear regression model. The prior hyperparameters $\mu_0$, $\Omega_0$, $\nu_0$ and $\sigma_0^2$ shall be set to sensible values. Start with
 
@@ -296,12 +300,14 @@ Does the collection of curves look reasonable? If not, change the prior hyperpar
 ```{r eval=TRUE}
 data <- read.csv('temp_linkoping.csv')
 library (mvtnorm)
-
 # define inverse chi square function
-mu_0 <- c(15, -50, 50)
-nu_0<- 1
+#self-defined prior hyperparameters
+mu_0 <- c(15, -50, 50) 
+nu_0<- 1 
 sig_0_sq <- 2
 omega_0 <- diag(3)*0.8
+
+
  rinvchisq <- function(n, df, scale) {
   df * scale / rchisq(n, df)
   }
@@ -319,7 +325,10 @@ temp <- as.matrix(data[, 4])
 curve <-  matrix(NA, nrow = 366, ncol = 100)
 
 for  (i in 1: 100) {
+  # sample for sigma square first
   sig_sq_sp<- rinvchisq(1,nu_0, sig_0_sq)
+  
+  # beta from sampeled sigma square 
   samp <- rmvnorm(n=1, mean= mu_0, sigma = sig_sq_sp*solve(omega_0))
   pred  <- time %*% as.numeric(samp)
   curve [,i] <- pred
@@ -331,7 +340,65 @@ for (i in 2:100) {
 }
 ```
 
-#### (b) Function to Simulate from Joint Posterior Distribution 
+#### ? Bayesian Linear Regression with Conjugate Prior
+
+We consider a Bayesian linear regression model with a conjugate prior. The response variable (e.g., temperature) is modeled as a quadratic function of time:
+
+$$
+f(\text{time}) = \mathbb{E}[\text{temp}|\text{time}] = \beta_0 + \beta_1 \cdot \text{time} + \beta_2 \cdot \text{time}^2,
+$$
+
+The model assumes a Gaussian likelihood and conjugate priors:
+
+-   The prior for $$\ \boldsymbol{\beta} \mid \sigma^2 $$is:
+
+$$
+\boldsymbol{\beta} \mid \sigma^2 \sim \mathcal{N}(\boldsymbol{\mu}_0, \sigma^2 W_0^{-1})
+$$
+
+-   The prior for the variance is an inverse-chi-squared distribution:
+
+$$
+\sigma^2 \sim \text{Inv-}\chi^2(\nu_0, \sigma_0^2)
+$$
+
+------------------------------------------------------------------------
+
+Given observed data, the posterior distributions are:
+
+-   For $$\ \boldsymbol{\beta} \mid \sigma^2, \text{y} $$:
+
+$$
+\boldsymbol{\beta} \mid \sigma^2, \text{y} \sim \mathcal{N}(\boldsymbol{\mu}_n, \sigma^2 W_n^{-1})
+$$
+
+-   For $$ \sigma^2 \mid \text{y} $$:
+
+$$
+\sigma^2 \mid \text{y} \sim \text{Inv-}\chi^2(\nu_n, \sigma_0^2)
+$$
+
+The updated posterior parameters are computed as:
+
+$$
+W_n = W_0 + X^\top X
+$$
+
+$$
+\boldsymbol{\mu}_n = W_n^{-1} (W_0 \boldsymbol{\mu}_0 + X^\top y)
+$$ with $y = X \boldsymbol{\beta} + \varepsilon$, the standard linear regression form. In calculation just use $y = X \boldsymbol{\beta}$.
+
+$$
+\nu_n = \nu_0 + n
+$$
+
+$$
+\nu_n \sigma_0^2 = \nu_0 \sigma_0^2 + (\boldsymbol{\mu}_0^\top W_0 \boldsymbol{\mu}_0 + y^\top y - \boldsymbol{\mu}_n^\top W_n \boldsymbol{\mu}_n)
+$$
+
+This conjugate setup ensures the posterior remains in the same family as the prior, allowing for analytic updates and efficient inference.
+
+#### (b) Function to Simulate from Joint Posterior Distribution
 
 Write a function that simulates draws from the joint posterior distribution of $\beta_0$, $\beta_1$, $\beta_2$ and $\sigma^2$.
 
@@ -347,7 +414,7 @@ i.e., the median of $f(\text{time})$ is computed for every value of `time`.\
 In addition, overlay curves for the 90% equal tail posterior probability intervals of $f(\text{time})$, i.e., the 5 and 95 posterior percentiles of $f(\text{time})$ are computed for every value of `time`.\
 Does the posterior probability interval contain most of the data points? Should they?
 
-##### Part 1 Plot a histogram for each marginal posterior of the parameters 
+##### Part 1 Plot a histogram for each marginal posterior of the parameters
 
 Since we use a Normal-Inverse-Chi-Squared prior on $(\beta, \sigma^2)$, where:
 
@@ -387,7 +454,7 @@ set.seed(123456)
 sample_posterior <- function (number ,nu_0, sig_0_sq, omega_0) {
   # The marginal posterior of sigma
 
-nu_n <- nu_0+366
+nu_n <- nu_0+366 ## n=366, 366 observations
 omega_n <- t(time) %*%time+omega_0
 mu_n <- solve(omega_n) %*% (omega_0%*%mu_0 +t(time)%*%(temp))
 sig_n_sq <- as.numeric(1/nu_n*(nu_0*sig_0_sq+
@@ -404,7 +471,8 @@ beta_marg <- matrix(nrow=number, ncol=3)
 colnames(beta_marg) = c('beta0', 'beta1','beta2')
 
  for (i in 1: number) {
-     beta_marg[i,] <- as.vector(rmvnorm(n=1, mean= mu_n, sigma = sig2_marg[i]*solve(omega_n)))
+     beta_marg[i,] <- as.vector(rmvnorm(n=1, mean= mu_n, 
+                                        sigma = sig2_marg[i]*solve(omega_n)))
  }
 return(list(sig2_marg = sig2_marg, beta_marg = beta_marg))
 }
@@ -440,8 +508,7 @@ hist(beta_marg[,1], breaks = 20)
 
 ```
 
-##### Part 2 Make a scatter plot of the temperature data and overlay posterior curves 
-
+##### Part 2 Make a scatter plot of the temperature data and overlay posterior curves
 
 ```{r eval=TRUE}
 pred_temp <- time%*%t(beta_marg)
@@ -454,7 +521,7 @@ points(time[,2], pred_temp_meadian[2,], col ='blue')
 
 ```
 
-#### (c)  Posterior Distribution of x̃ (time with lowest expected temperature) 
+#### (c) Posterior Distribution of x̃ (time with lowest expected temperature)
 
 It is of interest to locate the time with the lowest expected temperature (i.e., the time where $f(\text{time})$ is minimal). Let's call this value $\tilde{x}$.\
 Use the simulated draws in (b) to simulate from the posterior distribution of $\tilde{x}$.\
@@ -484,7 +551,7 @@ xbar <- -beta_marg[,2]/2/beta_marg[,3]
 hist(xbar, breaks = 20)
 ```
 
-#### (d) Higher Order Polynomial Regression (Order 10) with Regularizing Prior 
+#### (d) Higher Order Polynomial Regression (Order 10) with Regularizing Prior
 
 Say now that you want to estimate a polynomial regression of order 10, but you suspect that higher order terms may not be needed, and you worry about overfitting the data.\
 Suggest a suitable prior that mitigates this potential problem and motivate your choice.\
@@ -527,12 +594,12 @@ for (i in 2:100) {
 }
 ```
 
-## 5. Posterior approximation for classification with logistic regression 
+## 5. Posterior approximation for classification with logistic regression
 
 The dataset Disease.xlsx contains n = 313 observations on the following seven variables related to a certain disease:
 
 | Variable | Data type | Meaning | Role |
-|-----------------|-----------------|---------------------|-----------------|
+|------------------|------------------|------------------|------------------|
 | Class_of_diagnosis | Binary | Disease or not? | Response y |
 | Gender | Binary | Woman (1) or Male (0) | Feature |
 | Age | Counts | Age | Feature |
@@ -541,7 +608,116 @@ The dataset Disease.xlsx contains n = 313 observations on the following seven va
 | Dyspnoea | Binary | 1 if person has laboured breathing | Feature |
 | White_blood | Counts | N white blood cells per microliter | Feature |
 
-#### (a) Posterior Approximation of Logistic Regression Parameters (β) 
+#### ?Derivation of the Log-Posterior in Logistic Regression 
+
+We begin by specifying the probability model used in logistic regression. The likelihood for each observation is given by the logistic (sigmoid) function:
+
+$$
+P(y_i = 1 \mid \boldsymbol{x}_i, \boldsymbol{\beta}) = \frac{1}{1 + \exp(-\boldsymbol{x}_i^\top \boldsymbol{\beta})}.
+$$
+
+The Bernoulli likelihood for a single observation $$ y_i \in \{0, 1\} $$ is:
+
+$$
+p(y_i \mid \boldsymbol{x}_i, \boldsymbol{\beta}) = \left( \frac{1}{1 + \exp(-\boldsymbol{x}_i^\top \boldsymbol{\beta})} \right)^{y_i}
+\left( 1 - \frac{1}{1 + \exp(-\boldsymbol{x}_i^\top \boldsymbol{\beta})} \right)^{1 - y_i}.
+$$
+
+Simplifying the second term using:
+
+$$
+1 - \frac{1}{1 + \exp(-z)} = \frac{\exp(-z)}{1 + \exp(-z)},
+$$
+
+we get the complete likelihood for a single observation:
+
+$$
+p(y_i \mid \boldsymbol{x}_i, \boldsymbol{\beta}) = \left( \frac{\exp(\boldsymbol{x}_i^\top \boldsymbol{\beta})}{1 + \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta})} \right)^{y_i}
+\left( \frac{1}{1 + \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta})} \right)^{1 - y_i}.
+$$
+
+The likelihood for the full dataset with \( n \) observations is:
+
+$$
+p(\boldsymbol{y} \mid \boldsymbol{\beta}, X) = \prod_{i=1}^n \left( \frac{\exp(\boldsymbol{x}_i^\top \boldsymbol{\beta})}{1 + \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta})} \right)^{y_i}
+\left( \frac{1}{1 + \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta})} \right)^{1 - y_i}.
+$$
+
+Taking the logarithm of the likelihood gives the log-likelihood:
+
+$$
+\log p(\boldsymbol{y} \mid \boldsymbol{\beta}, X) = \sum_{i=1}^n \left[ y_i (\boldsymbol{x}_i^\top \boldsymbol{\beta}) - \log(1 + \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta})) \right].
+$$
+
+This is the log-likelihood function used in the optimization. In R code, it is typically written as:
+
+``` {r eval=FALSE}
+
+lin_pred <- X %*% beta
+log_lik <- sum(y * lin_pred - log(1 + exp(lin_pred)))
+
+```
+
+Note: In some implementations, to improve numerical stability, the log-sum-exp trick is used to avoid overflow in `log(1 + exp(x))`.
+
+Finally, if a prior distribution is placed on $$ \boldsymbol{\beta} $$, such as a Gaussian prior $$ \boldsymbol{\beta} \sim \mathcal{N}(0, \tau^2 I) $$, then the **log-posterior** becomes:
+
+$$
+\log p(\boldsymbol{\beta} \mid \boldsymbol{y}, X) \propto \log p(\boldsymbol{y} \mid \boldsymbol{\beta}, X) - \frac{1}{2 \tau^2} \boldsymbol{\beta}^\top \boldsymbol{\beta}.
+$$
+
+This is the target function optimized numerically to obtain the posterior mode $$ \tilde{\boldsymbol{\beta}} $$.
+
+
+#### ?Bayesian Logistic Regression: Log-Posterior Formulation
+
+In Bayesian logistic regression, the probability of a binary outcome is modeled using the logistic function:
+
+$$
+P(y_i = 1 \mid \boldsymbol{x}_i, \boldsymbol{\beta}) = \frac{1}{1 + \exp(-\boldsymbol{x}_i^\top \boldsymbol{\beta})}.
+$$
+
+Given observed outcomes $$y_i \in \{0, 1\}$$, the log-likelihood for all $$ n $$ observations is:
+
+$$
+\log p(\boldsymbol{y} \mid \boldsymbol{\beta}, X) = \sum_{i=1}^n \left[ y_i (\boldsymbol{x}_i^\top \boldsymbol{\beta}) - \log(1 + \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta})) \right].
+$$
+
+NOTICE: 
+log_lik <- sum(y * lin_pred - log1p(exp(lin_pred))),其中 log1p(x) 是 $\log(1 + x)$ 的稳定实现，用于防止数值溢出。
+
+
+By Bayes’ theorem, the posterior is proportional to the product of the likelihood and the prior. Taking logs gives the log-posterior (up to a constant):
+
+$$
+\log p(\boldsymbol{\beta} \mid \boldsymbol{y}, X) \propto \log p(\boldsymbol{y} \mid \boldsymbol{\beta}, X) + \log p(\boldsymbol{\beta}).
+$$
+
+The posterior distribution of $$ \boldsymbol{\beta} $$ is typically not available in closed form for logistic regression due to the non-conjugate likelihood. However, we can approximate the posterior using a second-order Taylor expansion of the log-posterior around its mode.
+
+Starting from the log-posterior expression:
+
+$$
+\log p(\boldsymbol{\beta} \mid \boldsymbol{y}, X) \propto \log p(\boldsymbol{y} \mid \boldsymbol{\beta}, X) + \log p(\boldsymbol{\beta}),
+$$
+
+we define $$ \tilde{\boldsymbol{\beta}} $$ as the value of $$ \boldsymbol{\beta} $$ that maximizes this log-posterior, i.e., the posterior mode.
+
+Using a Laplace approximation, we approximate the posterior distribution with a Gaussian centered at the mode $$ \tilde{\boldsymbol{\beta}} $$ and covariance given by the inverse of the negative Hessian of the log-posterior evaluated at $$ \tilde{\boldsymbol{\beta}} $$. This gives:
+
+$$
+\boldsymbol{\beta} \mid \boldsymbol{y}, X \approx \mathcal{N}(\tilde{\boldsymbol{\beta}}, J_y^{-1}(\tilde{\boldsymbol{\beta}})),
+$$
+
+where $$ J_y(\tilde{\boldsymbol{\beta}}) $$ is the observed information matrix:
+
+$$
+J_y(\tilde{\boldsymbol{\beta}}) = - \nabla^2 \log p(\boldsymbol{\beta} \mid \boldsymbol{y}, X) \big|_{\boldsymbol{\beta} = \tilde{\boldsymbol{\beta}}}.
+$$
+
+This approximation is useful for inference and posterior summaries, especially when exact sampling is computationally expensive.
+
+#### (a) Posterior Approximation of Logistic Regression Parameters (β)
 
 Consider the logistic regression model:
 
@@ -560,8 +736,7 @@ where $\tilde{\beta}$ is the posterior mode and $J(\tilde{\beta}) = -\frac{\part
 *Hint: You may use code snippets from my demo of logistic regression in Lecture 6.* Use the prior $\beta \sim \mathcal{N}(0, \tau^2 I)$, where $\tau = 2$.\
 Present the numerical values of $\tilde{\beta}$ and $J_y^{-1}(\tilde{\beta})$ for the Disease data. Compute an approximate 95% equal tail posterior probability interval for the regression coefficient to the variable Age. Would you say that this feature is of importance for the probability that a person has the disease?
 
-*Hint: You can verify that your estimation results are reasonable by comparing the posterior means to the maximum likelihood estimates, given by:*
-
+*Hint: You can verify that your estimation results are reasonable by comparing the posterior means to the maximum likelihood estimates, given by:* glmModel \<- glm(Class_of_diagnosis \~ 0 + ., data = Disease, family = binomial).]
 
 ```{r eval=TRUE}
 library(mvtnorm)
@@ -573,6 +748,10 @@ data[,c("age","duration_of_symptoms","white_blood" )] <-
 scale(data[,c("age","duration_of_symptoms","white_blood" )])
 
 Xnames = colnames(data)[1:6]
+```
+
+```{r eval=TRUE}
+
 LogPostLogistic <- function(beta,y,X,tau){
   lin_pred <- X %*% beta
   p = length(beta)
@@ -581,6 +760,9 @@ LogPostLogistic <- function(beta,y,X,tau){
   log_prior = dmvnorm(beta, rep(0, p), tau^2 * diag(p), log=TRUE);
   return(log_lik + log_prior)
 }
+```
+
+```{r eval=TRUE}
 lambda <- 1#
 tau=2
 Npar = dim(data)[2] - 1
@@ -588,26 +770,32 @@ mu <- as.matrix(rep(0,Npar)) #
 initVal <- matrix(0,Npar,1)
 Sigma <- (1/lambda)*diag(Npar) 
 y =  as.numeric(data$class_of_diagnosis)
-
 X = as.matrix(data[,1:ncol(data) - 1])# Select which covariates/features to include
+
 OptimRes <- optim(par = rep(0, ncol(X)), 
                 fn = LogPostLogistic, 
                 X = X, y = y, tau = tau,
                 method = "BFGS", 
                 control = list(fnscale = -1, maxit = 1000),
                 hessian = TRUE)
+
 approxPostMode <- matrix(OptimRes$par,1,6)
 cat("The posterior mode:",OptimRes$par) # The posterior mode
 cov_matrix <- solve(-OptimRes$hessian)  # J^{-1}
 approxPostStd <- sqrt(diag(cov_matrix)) # `Computing approximate standard deviations.
 
-Cred_int <- matrix(0,2,6) # Create 95 % approximate credibility intervals for each coefficient
+Cred_int <- matrix(0,2,6) 
+# Create 95 % approximate credibility intervals for each coefficient
 Cred_int[1,] <- approxPostMode - 1.96*approxPostStd
 Cred_int[2,] <- approxPostMode + 1.96*approxPostStd
 
 colnames(Cred_int) <- Xnames
-rownames(Cred_int) <- c("LCI","UCI") #LCI（Lower Confidence Interval）UCI（Upper Confidence Interval）
+rownames(Cred_int) <- c("LCI","UCI") 
+#LCI（Lower Confidence Interval）UCI（Upper Confidence Interval）
 print(Cred_int)
+```
+
+```{r eval=TRUE}
 # 使用glm验证
 glm_data <- data.frame(
   Class_of_diagnosis = data$class_of_diagnosis,
@@ -628,35 +816,103 @@ cat("glm model coefficient of age: ", coef(glm_model)[2], "\n")
 #Report the posterior mean (Estimate) and 95% confidence interval (LCI, UCI), 
  # Age:  -0.26762 (95% CI: -0.015, -0.51)
 ```
-The 95% confidence interval of the Age variable does not include 0, result is [-0.015, -0.51] ,MAP is -0.26, so it  has a significant impact on the probability of illness.
 
-#### (b) Posterior Predictive Distribution of Pr(y=1∣x) 
+The 95% confidence interval of the Age variable does not include 0, result is [-0.51, -0.015] ,MAP is -0.27, so it has a significant impact on the probability of illness.
+
+#### (b) Posterior Predictive Distribution of Pr(y=1∣x)
 
 Use your normal approximation to the posterior from (a). Write a function that simulate draws from the posterior predictive distribution of $\Pr(y = 1|x)$, where the certain diagnosis method was used and where the values of x corresponds to a 38-year-old woman, with 10 days of symptoms, no laboured breathing and 11000 white blood cells per microliter. Plot the posterior predictive distribution of $\Pr(y = 1|x)$ for this person.
 
 *Hints: The R package `mvtnorm` will be useful. Remember that* $\Pr(y = 1|x)$ can be calculated for each posterior draw of β.
-```{r eval=TRUE} 
+
+```{r eval=TRUE}
 set.seed(123)
 data_b <- read.csv("Disease.csv")
 
+# standardize the numeric features
+# model was trained on standardized variables.To make predictions, the new data 
+#must be on the same scale.
 new_age <- (38 - mean(data_b$age)) / sd(data_b$age)
 new_duration <- (10 - mean(data_b$duration_of_symptoms)) / sd(data_b$duration_of_symptoms)
 new_white <- (11000 - mean(data_b$white_blood)) / sd(data_b$white_blood)
-X_new <- c(1, 1, new_age, new_duration, 0, new_white)
+X_new <- c(1, new_age, 1, new_duration, 0, new_white)
 
 samples <- rmvnorm(10000, mean = OptimRes$par, sigma = cov_matrix)
 lin_pred <- samples %*% X_new
 pr <- exp(lin_pred) / (1 + exp(lin_pred))
 
-hist(pr, breaks = 50, main = "Posterior Predictive Distribution of Pr(y=1|x)",
-     xlab = "Probability", col = "skyblue", border = "white")
+hist(pr, breaks = 50,prob = TRUE,main = "Posterior Predictive Distribution of Pr(y=1|x)",
+     xlab = "Probability", col = "skyblue", border = "white",)
+lines(density(pr), col = "darkblue", lwd = 2)
+
+#When you plot a histogram with prob = TRUE, or when you use density(), the 
+#y-axis represents density, not probability. That means the height of the curve 
+#can exceed 1, as long as the total area under the curve is 1.
 ```
 
-## 6. Gibbs sampling for the logistic regression 
+#### ? Gibbs Sampling for Bayesian Logistic Regression using Polya-Gamma Augmentation
+
+In Bayesian logistic regression, direct sampling from the posterior distribution of the coefficients $\boldsymbol{\beta}$ is challenging due to the non-conjugate likelihood. One efficient approach to address this is **Polya-Gamma data augmentation**, which introduces latent variables to make the conditional distributions tractable for Gibbs sampling.
+
+We assume a prior for the regression coefficients:
+
+$$
+\boldsymbol{\beta} \sim \mathcal{N}(\boldsymbol{b}, B),
+$$
+
+and introduce latent variables $w = (w_1, \ldots, w_n)$ such that the joint posterior becomes:
+
+$$
+p(\boldsymbol{\beta}, \boldsymbol{w} \mid \boldsymbol{y}) \propto p(\boldsymbol{y} \mid \boldsymbol{\beta}, \boldsymbol{w}) \, p(\boldsymbol{w} \mid \boldsymbol{\beta}) \, p(\boldsymbol{\beta}).
+$$
+
+In each iteration of the Gibbs sampler:
+
+1.  For $i = 1, \ldots, n$, sample each latent variable: $$
+    w_i \mid \boldsymbol{\beta} \sim \text{PG}(1, \boldsymbol{x}_i^\top \boldsymbol{\beta}),
+    $$ where $\text{PG}(1, \cdot)$ denotes the Polya-Gamma distribution.
+
+2.  Then sample the regression coefficients from the conditional Gaussian posterior: $$
+    \boldsymbol{\beta} \mid \boldsymbol{y}, \boldsymbol{w} \sim \mathcal{N}(\boldsymbol{m}_w, V_w),
+    $$ where $$
+    V_w = \left(X^\top W X + B^{-1} \right)^{-1}, \quad \boldsymbol{m}_w = V_w \left(X^\top \boldsymbol{\kappa} + B^{-1} \boldsymbol{b} \right),
+    $$ with $W = \text{diag}(w_1, \ldots, w_n)$ and $\kappa_i = y_i - \frac{1}{2}$.
+
+This augmentation makes each full conditional distribution easy to sample from, enabling efficient posterior inference through Gibbs sampling.
+
+#### ?Inefficiency Factor (IF)
+
+In Markov Chain Monte Carlo (MCMC), the samples $\{q^{(1)}, q^{(2)}, \ldots, q^{(N)}\}$ are usually autocorrelated, which means that the variance of the sample mean $\bar{q}$ does not decrease as fast as it would with independent samples.
+
+The **variance of the sample mean** $\bar{q}$ can be expressed as:
+
+$$
+\text{Var}(\bar{q}) = \frac{\sigma^2}{N} \cdot \text{IF},
+$$
+
+where $\sigma^2$ is the marginal variance of $q^{(i)}$, and $\text{IF}$ is the **inefficiency factor**, also called the **integrated autocorrelation time**.
+
+The inefficiency factor is defined as:
+
+$$
+\text{IF} = 1 + 2 \sum_{k=1}^{\infty} \rho_k,
+$$
+
+where $\rho_k$ is the lag-$k$ autocorrelation of the MCMC samples. This expression shows how autocorrelation inflates the variance of the estimator. When samples are independent, all $\rho_k = 0$, and $\text{IF} = 1$.
+
+In practice, the infinite sum is truncated at some lag $K$ where $\rho_k$ becomes negligible, giving the estimate:
+
+$$
+\widehat{\text{IF}} = 1 + 2 \sum_{k=1}^{K} \widehat{\rho}_k.
+$$
+
+A lower IF indicates more efficient sampling, with IF close to 1 being ideal.
+
+## 6. Gibbs sampling for the logistic regression
 
 Consider again the logistic regression model in problem 2 from the previous computer lab 2. Use the prior $\beta \sim \mathcal{N}(0, \tau^2 I)$, where $\tau = 3$.
- 
-### (a)  Gibbs Sampler Implementation for Logistic Regression with Polya-Gamma Augmentation 
+
+### (a) Gibbs Sampler Implementation for Logistic Regression with Polya-Gamma Augmentation
 
 Implement (code!) a Gibbs sampler that simulates from the joint posterior $p(\omega, \beta|x)$ by augmenting the data with Polya-gamma latent variables $\omega_i, i = 1, \dots, n$. The full conditional posteriors are given on the slides from Lecture 7. Evaluate the convergence of the Gibbs sampler by calculating the Inefficiency Factors (IFs) and by plotting the trajectories of the sampled Markov chains.
 
@@ -681,7 +937,9 @@ beta_samples <- matrix(NA, nDraws, p)
 set.seed(123)
 
 for (i in 1:nDraws) {
+  # sample for wi|beta
   omega <- rpg(n, 1, x %*% beta)
+  
   k <- y - 1 / 2
   B <- 9 * diag(6)
   b <- rep(0, p)
@@ -748,11 +1006,11 @@ for (i in 1:p) {
 
 ```
 
-Plots show that all efficient fluctrate around certain levels without any obvious tendency or any stuck. And calculated inefficiency factors are around 1, which means very sampling are performed with quite low dependency and the efficiency is very good.
+Plots show that all efficient fluctuate around certain levels without any obvious tendency or any stuck. And calculated inefficiency factors are around 1, which means very sampling are performed with quite low dependency and the efficiency is very good.
 
 ------------------------------------------------------------------------
 
-### (b) Gibbs Sampler with Varying Data Subset Sizes 
+### (b) Gibbs Sampler with Varying Data Subset Sizes
 
 Repeat the same task as in (a), but now only use the first m observations of the dataset. Do this for all $m \in \{10, 40, 80\}$.
 
@@ -813,13 +1071,25 @@ acfs <- matrix(NA, max_lag, p)
 for (i in 1:p) {
   chain <- beta_samples[, i] - mean(beta_samples[, i])
   var_chain <- mean(chain ^ 2)
+  
   for (j in 1:max_lag) {  # j as lag
     # calculate the autocorrelation factor
-    acfs[j, i] <- sum(chain[1:(nPost - j)] * chain[(j + 1):nPost]) / nPost / var_chain
+    # 使用 nPost - j 作为有效样本数更合理
+    acfs[j, i] <- sum(chain[1:(nPost - j)] * chain[(j + 1):nPost]) / (nPost-j) / var_chain
     
   }
   
 }
+
+# or can be done with acf()
+acfs <- matrix(NA, nrow = max_lag, ncol = p)
+
+for (i in 1:p) {
+  # 自动去均值并计算 acf，type = "correlation" 返回的是标准化后的自相关系数
+  acf_res <- acf(beta_samples[, i], lag.max = max_lag, plot = FALSE, type = "correlation")
+  acfs[, i] <- acf_res$acf[-1]  # 去掉 lag 0
+}
+
 
 par(mfrow = c(2, 3))  # 6 pics
 
@@ -852,7 +1122,7 @@ For case 2 and 3 where there are 40 and 80 observations respectively, all plots 
 
 ------------------------------------------------------------------------
 
-## 7. Metropolis Random Walk for Poisson regression 
+## 7. Metropolis Random Walk for Poisson regression
 
 Consider the following Poisson regression model:
 
@@ -874,8 +1144,7 @@ The dataset contains observations from 700 eBay auctions of coins. The response 
 -   **LogBook**: Logarithm of the book value of the auctioned coin according to expert sellers (Standardized)
 -   **MinBidShare**: Ratio of the minimum selling price (starting price) to the book value (Standardized).
 
-### (a) Maximum Likelihood Estimation and Covariate Significance in Poisson Regression 
-
+### (a) Maximum Likelihood Estimation and Covariate Significance in Poisson Regression
 
 Obtain the maximum likelihood estimator of $\beta$ in the Poisson regression model for the eBay data. [Hint: `glm.R`, don't forget that `glm()` adds its own intercept so don't input the covariate `Const`.] Which covariates are significant?
 
@@ -896,8 +1165,86 @@ Lower P value means higher significance, as is shown, significant covariants are
 
 ------------------------------------------------------------------------
 
-### (b) Bayesian Analysis: Multivariate Normal Approximation of the Posterior 
+#### ?Derivation of the Log-Posterior in Poisson Regression
 
+We model the response variable $$ y_i\in \mathbb{N} $$ using a Poisson distribution:
+
+$$
+y_i \mid \boldsymbol{x}_i, \boldsymbol{\beta} \sim \text{Poisson}(\lambda_i), \quad \text{where } \lambda_i = \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta}).
+$$
+
+The probability mass function (pmf) of the Poisson distribution is:
+
+$$
+p(y_i \mid \lambda_i) = \frac{\lambda_i^{y_i} e^{-\lambda_i}}{y_i!}.
+$$
+
+Substituting $$ \lambda_i = \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta}) $$, we obtain:
+
+$$
+p(y_i \mid \boldsymbol{x}_i, \boldsymbol{\beta}) = \frac{\left( \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta}) \right)^{y_i} \exp\left(-\exp(\boldsymbol{x}_i^\top \boldsymbol{\beta})\right)}{y_i!}.
+$$
+
+The **log-likelihood** for a single observation becomes:
+
+$$
+\log p(y_i \mid \boldsymbol{x}_i, \boldsymbol{\beta}) = y_i (\boldsymbol{x}_i^\top \boldsymbol{\beta}) - \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta}) - \log(y_i!).
+$$
+
+Summing over all n  observations, the total log-likelihood is:
+
+$$
+\log p(\boldsymbol{y} \mid \boldsymbol{\beta}, X) = \sum_{i=1}^n \left[ y_i (\boldsymbol{x}_i^\top \boldsymbol{\beta}) - \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta}) - \log(y_i!) \right].
+$$
+
+Since $$ \log(y_i!) $$ does not depend on $$ \boldsymbol{\beta} $$, it can be omitted in optimization or posterior sampling. Thus, we use the simplified log-likelihood:
+
+$$
+\log p(\boldsymbol{y} \mid \boldsymbol{\beta}, X) \propto \sum_{i=1}^n \left[ y_i (\boldsymbol{x}_i^\top \boldsymbol{\beta}) - \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta}) \right].
+$$
+
+ Prior
+
+We place a Gaussian prior on $$ \boldsymbol{\beta} $$:
+
+$$
+\boldsymbol{\beta} \sim \mathcal{N}(0, g (X^\top X)^{-1}),
+$$
+
+where  g = 100  is a scalar. The log prior is:
+
+$$
+\log p(\boldsymbol{\beta}) = -\frac{1}{2} \boldsymbol{\beta}^\top \left( \frac{1}{g} X^\top X \right) \boldsymbol{\beta} + \text{const}.
+$$
+
+Log-Posterior
+
+Combining likelihood and prior, we get the **log-posterior** up to a constant:
+
+$$
+\log p(\boldsymbol{\beta} \mid \boldsymbol{y}, X) \propto \sum_{i=1}^n \left[ y_i (\boldsymbol{x}_i^\top \boldsymbol{\beta}) - \exp(\boldsymbol{x}_i^\top \boldsymbol{\beta}) \right] - \frac{1}{2} \boldsymbol{\beta}^\top \left( \frac{1}{g} X^\top X \right) \boldsymbol{\beta}.
+$$
+
+This is the function we maximize (e.g., with `optim()`) or use in MCMC sampling.
+
+
+```{r echo =TRUE}
+LogPostPoisson <- function(beta, y, X) {
+  beta <- as.numeric(beta)
+  lin_pred <- X %*% beta
+  log_lik <- sum(y * lin_pred - exp(lin_pred))
+  
+  p <- length(beta)
+  log_prior <- dmvnorm(beta, rep(0, p), 100 * solve(t(X) %*% X), log = TRUE)
+  
+  return(log_lik + log_prior)
+}
+```
+
+This function returns the log-posterior (up to a constant), combining both the likelihood and the g-prior.
+
+
+### (b) Bayesian Analysis: Multivariate Normal Approximation of the Posterior
 
 Let's do a Bayesian analysis of the Poisson regression. Let the prior be $\beta \sim \mathcal{N}(0, 100 \cdot (X^\top X)^{-1})$, where $X$ is the $n \times p$ covariate matrix. This is a commonly used prior, which is called Zellner's g-prior. Assume first that the posterior density is approximately multivariate normal:
 
@@ -914,7 +1261,7 @@ $\tilde{\beta}$ and $J_y(\tilde{\beta})$ can be obtained by numerical optimizati
 y<- matrix(data$nBids, ncol=1)
 x<- as.matrix(data[, 2:10])
 
-LogPostPossion <- function(beta,y,X){
+LogPostPoisson <- function(beta,y,X){
   beta <- as.numeric(beta)
   lin_pred <- X %*% beta
   p = length(beta)
@@ -928,7 +1275,7 @@ LogPostPossion <- function(beta,y,X){
 }
 
 OptimRes <- optim(par = rep(0, ncol(x)), 
-                fn = LogPostPossion, 
+                fn = LogPostPoisson, 
                 X = x, y = y,
                 method = "BFGS", 
                 control = list(fnscale = -1, maxit = 1000),
@@ -940,14 +1287,14 @@ cov_matrix <- solve(-OptimRes$hessian)# J^{-1}
 
 ------------------------------------------------------------------------
 
-### (c) Metropolis Random Walk Sampling and MCMC Convergence Assessment 
-
+### (c) Metropolis Random Walk Sampling and MCMC Convergence Assessment
 
 Let's simulate from the actual posterior of $\beta$ using the Metropolis algorithm and compare the results with the approximate results in (b). Program a general function that uses the Metropolis algorithm to generate random draws from an arbitrary posterior density. In order to show that it is a general function for any model, we denote the vector of model parameters by $\theta$. Let the proposal density be the multivariate normal density mentioned in Lecture 8 (random walk Metropolis):
 
 $$
 \theta^{(p)} \mid \theta^{(i-1)} \sim \mathcal{N}(\theta^{(i-1)}, c \cdot \Sigma),
 $$
+ $P(y_i = 1) = \sigma(\boldsymbol{x}_i^\top \boldsymbol{\beta})$
 
 where $\Sigma = J_y^{-1}(\tilde{\beta})$ was obtained in (b). The value $c$ is a tuning parameter and should be an input to your Metropolis function. The user of your Metropolis function should be able to supply her own posterior density function, not necessarily for the Poisson regression, and still be able to use your Metropolis function. This is not so straightforward, unless you have come across function objects in R. The note `HowToCodeRWM.pdf` in Lisam describes how you can do this in R.
 
@@ -981,7 +1328,7 @@ mp_sim <- function(c, LogPostFunc, ndraws, theta_init, sigma) {
 
 ```{r eval=TRUE}
 set.seed(123)
-possion_samp <- mp_sim(1,LogPostFunc = LogPostPossion, 
+possion_samp <- mp_sim(1,LogPostFunc = LogPostPoisson, 
                        ndraws=10000, 
                        theta_init=OptimRes$par, 
                        sigma=cov_matrix)
@@ -1040,7 +1387,7 @@ Since trajectories and the mean and standard deviation for different parameters 
 
 ------------------------------------------------------------------------
 
-### (d) Posterior Predictive Distribution for a New Auction 
+### (d) Posterior Predictive Distribution for a New Auction
 
 Use the MCMC draws from (c) to simulate from the predictive distribution of the number of bidders in a new auction with the characteristics below. Plot the predictive distribution. What is the probability of no bidders in this new auction?
 
@@ -1071,8 +1418,8 @@ print(prob_0)
 ------------------------------------------------------------------------
 
 ## 8.Time series models in Stan
- 
-### (a) Simulation and Exploration of the AR(1) Process 
+
+### (a) Simulation and Exploration of the AR(1) Process
 
 Write a function in R that simulates data from the AR(1)-process
 
@@ -1118,11 +1465,12 @@ for (i in nplot) {
      main=paste('x changes with',p[i], 'as phi'))
 }
 ```
-$\phi$ controls the strength of autocorrelation. $\phi$ with small absolute value gives weak correlation and values fulctuate quickly. 
+
+$\phi$ controls the strength of autocorrelation. $\phi$ with small absolute value gives weak correlation and values fulctuate quickly.
 
 ------------------------------------------------------------------------
 
-### (b) Bayesian Inference for AR(1) Parameters using Stan 
+### (b) Bayesian Inference for AR(1) Parameters using Stan
 
 Use your function from (a) to simulate two AR(1)-processes, $x_{1:T}$ with $\phi = 0.4$ and $y_{1:T}$ with $\phi = 0.98$. Now, treat your simulated vectors as synthetic data, and treat the values of $\mu$, $\phi$ and $\sigma^2$ as unknown parameters. Implement Stan-code that samples from the posterior of the three parameters, using suitable non-informative priors of your choice.
 
@@ -1189,8 +1537,7 @@ print(round(posterior_summary, 3))
 
 ```
 
-Mean, 95% CI and effective posterior sample number are shown as above. 
-The simulated parameter values are quite close to the true parameter values and the true parameter lies in the 95% CI of simulated parameter values, thus we are able to estimate the true values.
+Mean, 95% CI and effective posterior sample number are shown as above. The simulated parameter values are quite close to the true parameter values and the true parameter lies in the 95% CI of simulated parameter values, thus we are able to estimate the true values.
 
 ```{r eval=TRUE}
 posterior_samples <- as.data.frame(rstan::extract(fit, pars = c("mu", "phi")))
@@ -1252,8 +1599,8 @@ summary_fit <- summary(fit, pars = c("mu", "phi", "sigma"))$summary
 posterior_summary <- summary_fit[, c("mean", "2.5%", "97.5%", "n_eff", "Rhat")]
 print(round(posterior_summary, 3))
 ```
-Mean, 95% CI and effective posterior sample number are shown as above. 
-Despite simulated phi and sigma values are quite close to the true values and the true values lie in the 95% CI, the simulated mean gives too wide 95% CI, making it unable to make a estimate of it. This shows that the data provide little information about μ, and the estimate of μ is not very precise.
+
+Mean, 95% CI and effective posterior sample number are shown as above. Despite simulated phi and sigma values are quite close to the true values and the true values lie in the 95% CI, the simulated mean gives too wide 95% CI, making it unable to make a estimate of it. This shows that the data provide little information about μ, and the estimate of μ is not very precise.
 
 ```{r eval=TRUE}
 posterior_samples <- as.data.frame(rstan::extract(fit, pars = c("mu", "phi")))
@@ -1263,5 +1610,5 @@ plot(posterior_samples$mu, posterior_samples$phi,
      main = "Joint Posterior of μ and φ", pch = 20, col = rgb(0, 0, 1, 0.3))
 ```
 
-Both cases have Rhat values < 1.05, meaning all chains are well- mixed and agree. Besides,  the traceplots have shown no stickiness and no drift. Thus, convergence is considered reached for both $\phi$ values.  
+Both cases have Rhat values \< 1.05, meaning all chains are well- mixed and agree. Besides, the traceplots have shown no stickiness and no drift. Thus, convergence is considered reached for both $\phi$ values.\
 When $\phi$ is equal to 0.4, $\mu$ and $\phi$ is low correlated (cloud-shape plot) and moderate correlated (diagonal elliptical shape) when $\phi$ is 0.98. This is due to the near-nonstationary behavior of the AR(1) process when $\phi$ is close to 1. We can conclude that even if convergence is good or acceptable, it does not necessarily mean a good sample for the posterior.
