@@ -1160,8 +1160,8 @@ colnames(data) <- c("nBids", "Const", "PowerSeller", "VerifyID", "Sealed", "MinB
 model <- glm(nBids ~ . - Const, family = poisson, data = data)
 summary(model)
 ```
-
-Lower P value means higher significance, as is shown, significant covariants are VerifyID and MinBidShare.
+If p < 0.05, the variable is generally considered to have a statistically significant effect.
+As is shown, significant covariants are VerifyID,  MinBidShare, Sealed, MajBlem, intercept and MinBidShare.
 
 ------------------------------------------------------------------------
 
@@ -1259,6 +1259,8 @@ $\tilde{\beta}$ and $J_y(\tilde{\beta})$ can be obtained by numerical optimizati
 ```{r eval=TRUE}
 
 y<- matrix(data$nBids, ncol=1)
+#y <- as.numeric(data$nBids)
+
 x<- as.matrix(data[, 2:10])
 
 LogPostPoisson <- function(beta,y,X){
@@ -1267,7 +1269,10 @@ LogPostPoisson <- function(beta,y,X){
   p = length(beta)
   
   # Poisson log-likelihood
-  log_lik <- sum(y * lin_pred - exp(lin_pred))
+  #added - lgamma(y + 1) term, which represents -log(y!) in the Poisson log-likelihood
+  # lgamma(y + 1) correctly computes log(𝑦!)log(y!) and 
+  #handles non-integer/floating-point y safely.
+  log_lik <- sum(y * lin_pred - exp(lin_pred) - lgamma(y + 1))
   
   # Zellner's g-prior: beta ~ N(0, 100 * (X^T X)^-1)
   log_prior = dmvnorm(beta, rep(0, p), 100*solve(t(X)%*%X), log=TRUE);
@@ -1283,6 +1288,11 @@ OptimRes <- optim(par = rep(0, ncol(x)),
 approxPostMode <- matrix(OptimRes$par,1,9)
 cov_matrix <- solve(-OptimRes$hessian)# J^{-1}
 
+cat("Posterior mode:\n")
+print(approxPostMode)
+
+cat("\nPosterior covariance matrix (approx.):\n")
+print(cov_matrix)
 ```
 
 ------------------------------------------------------------------------
