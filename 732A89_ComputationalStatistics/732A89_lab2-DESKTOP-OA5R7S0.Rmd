@@ -1,0 +1,315 @@
+---
+title: "Lab 2 Group 8"
+output:
+  pdf_document:
+    latex_engine: lualatex
+date: "2025-02-03"
+author:
+  - Liuxi Mei
+  - Xiaochen Liu
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1: Optimization of a two-dimensional function
+
+Consider the two-dimensional function:
+
+$$f(x, y) = \sin(x + y) + (x - y)^2 - 1.5x + 2.5y + 1$$
+
+for $x \in [-1.5, 4]$ and $y \in [-3, 4]$.The aim is to search for the position $(x^*, y^*)$ of the global minimum of $f$ in the given range for $x$ and $y$.
+
+### a) Make a contour plot for this function.
+```{r echo=FALSE}
+
+f <- function(x, y) {
+  sin(x + y) + (x - y)^2 - 1.5 * x + 2.5 * y + 1
+}
+x_values <- seq(-1.5, 4, length.out = 200)
+y_values <- seq(-3, 4, length.out = 200)
+coordinates <- expand.grid(x_values, y_values)
+
+results <- matrix(apply(coordinates, 1, function(data) f(data[1], data[2])),nrow=length(x_values))
+
+contour(x_values, y_values, results,nlevels = 40,xlab = "x", ylab = "y", main = "Contour Plot of f(x, y)",
+        col = "blue", lty = 1, lwd = 2)
+```
+
+
+
+### b) Derive the gradient and Hessian matrix for the function and write R-code for them.
+```{r echo=FALSE}
+
+gradient <- function (x, y) {
+  return(matrix(c(
+    cos(x + y) + 2 * x - 2 * y - 1.5, cos(x + y) + 2 * y - 2 * x + 2.5
+  ), nrow = 2))
+  
+}
+
+Hessian <- function (x , y) {
+  return(matrix(c(
+    -sin(x + y) + 2, -sin(x + y) - 2, -sin(x + y) - 2, -sin(x + y) + 2
+  ), nrow = 2))
+}
+```
+
+### c) Write your own function applying the Newton algorithm that has the starting value $(x_0, y_0)$ as a parameter
+```{r echo=FALSE}
+#stopping criteria
+convergence_crit<- function(res) {
+  xt1<- res[,dim(res)[2]]
+  xt<- res[,dim(res)[2]-1]
+  return(as.vector(t (xt1-xt) %*% (xt1-xt)))
+}
+
+Newton_algorithm <- function (x_0, y_0) {
+  res <- matrix ( c(x_0,y_0), nrow=2)
+   res <- cbind(res, Hessian (x_0, y_0) %*% gradient (x_0 ,y_0)) 
+   
+   while (convergence_crit(res) >0.001) {
+     xt1<- res[,dim(res)[2]]
+     res_add <- xt1 - solve (Hessian (xt1[1], xt1[2])) %*% gradient (xt1[1] ,xt1[2])
+     res <- cbind(res, res_add)
+   }
+   return (res)
+} 
+
+
+```
+
+
+### d) Test several starting values such that you have examples which give at least three different results.
+```{r echo=FALSE}
+values<- matrix (c(0,0.5,
+                   -1,0,
+                   -2,-3
+                   #1,2,
+                   #4,0.1
+                  ),
+                 ncol = 2,byrow = TRUE)
+  points<- matrix(NA,nrow=3, ncol=2)
+for (i in 1:nrow(values)) {
+  res_df<-Newton_algorithm(values[i,1],values[i,2])
+  #browser()
+  cat('Newton_algorithm gives a mimimum value at (',res_df[1,dim(res_df)[2]], ',', res_df[2,dim(res_df)[2]],'at the ',dim(Newton_algorithm(2,1))[2]-1, 'iteration for a=',values[i,1], 'b=', values[i,2],'\n')
+  points[i,1] <- res_df[1,dim(res_df)[2]]
+  points[i,2] <-res_df[2,dim(res_df)[2]]
+}
+
+```
+ 
+### e) Investigate the candidate results which you have got. Is one of the candidates a global minimum? Which type of solutions are the other candidates?
+
+```{r echo=FALSE}
+
+for (i in 1:nrow(points)) {
+  # 获取Hessian矩阵的特征值
+  res <- eigen(Hessian(points[i, 1], points[i, 2]))$values
+  
+  # 判断临界点类型
+  if (res[1] * res[2] < 0) {
+    # 若特征值符号不同，则是鞍点
+    cat(points[i, 1], points[i, 2], 'is a saddle point', '\n')
+  } else if (res[1] > 0) {
+    # 若特征值均为正，则是局部极小点
+    cat(points[i, 1], points[i, 2], 'is a local minimum', '\n')
+  } else {
+    # 若特征值均为负，则是局部极大点
+    cat(points[i, 1], points[i, 2], 'is a local maximum', '\n')
+  }
+}
+```
+
+The last solution gives (-0.55, -1,54) and (2.59, 1.59)  the local minimum. (1.54, 0.55) is a saddle point. 
+Since the function has a lower value in (-0.55, -1,54), it is a global minimum.
+```{r echo=FALSE}
+if (f(points[1,1], points[1,2])> f(points[2,1], points[2,2])) {
+  cat(points[2, 1], points[2, 2], 'is a saddle point', '\n')
+}else{
+  cat(points[1, 1], points[1, 2], 'is a saddle point', '\n') }
+```
+
+
+## Question 2: Maximum likelihood
+
+Three doses (0.1, 0.3, and 0.9 g) of a drug and placebo (0 g) are tested in a study. Afterward, a dose-dependent event is recorded. The data of $n = 10$ subjects is shown in Table 1; $x_i$ is the dose in grams; $y_i = 1$ if the event occurred, $y_i = 0$ otherwise.
+
+| $x_i$ (g) | 0   | 0   | 0   | 0.1 | 0.1 | 0.3 | 0.3 | 0.9 | 0.9 | 0.9 |
+|-----------|-----|-----|-----|-----|-----|-----|-----|-----|-----|-----|
+| $y_i$     | 0   | 0   | 1   | 0   | 1   | 1   | 1   | 0   | 1   | 1   |
+
+Table 1: Data for Question 2
+
+You should fit a simple logistic regression
+
+$$ p(x) = P(Y = 1|x) = \frac{1}{1 + \exp(-\beta_0 - \beta_1 x)} $$
+
+to the data, i.e., estimate $\beta_0$ and $\beta_1$. One can show that the log likelihood is
+
+$$ g(b) = \sum_{i=1}^{n} \left[ y_i \log\left\{(1 + \exp(-\beta_0 - \beta_1 x_i))^{-1}\right\} + (1 - y_i) \log\left\{1 - (1 + \exp(-\beta_0 - \beta_1 x_i))^{-1}\right\} \right] $$
+
+where $b = (\beta_0, \beta_1)^T$ and the gradient is
+
+$$ g'(b) = \sum_{i=1}^{n} \left[ y_i - \frac{1}{1 + \exp(-\beta_0 - \beta_1 x_i)} \right] \begin{pmatrix} 1 \\ x_i \end{pmatrix} $$ \`\`\`
+
+#### a. Write a function for an ML-estimator for $(\beta_0, \beta_1)$ using the steepest ascent method with a step-size-reducing line search (back-tracking).For this, you can use and modify the code for the steepest ascent example of the lecture. The function should count the number of function and gradient evaluations.
+
+```{r echo= FALSE}
+x <- c(0, 0, 0, 0.1, 0.1, 0.3, 0.3, 0.9, 0.9, 0.9)
+y <- c(0, 0, 1, 0, 1, 1, 1, 0, 1, 1)
+
+data <- rbind (x, y)
+# define the probability function
+#b_0 <- -0.2
+#b_1 <- 1
+#b <- c(b_0, b_1)
+p <- function(x, b) {
+  return(1 / (1 + exp(-b[1] - b[2] * x)))
+}
+
+g <- function(b) {
+  g <- 0
+  for (i in 1:dim(data)[2]) {
+    mat <- as.matrix(data[, i])
+    g_add <- mat[2] * log(p(mat[1], b = b)) + (1 - mat[2]) * log(1-p(mat[1],b))
+    g <- g_add + g
+  }
+  return(g)
+}
+# define the gradient function
+gradient <- function (b) {
+  gradient <- matrix(c(0, 0))
+  for (i in 1:dim(data)[2]) {
+    mat <- as.matrix(data[, i])
+    gradient_add <- (mat[2] - p(mat[1],b)) * matrix (c(1, mat[1]))
+    gradient <- gradient_add + gradient
+  }
+  return(gradient)
+  
+}
+
+#Steepest ascent function:
+steepestasc <- function(x0, eps = 0, alpha0 = 1)
+{
+  xt <- matrix(c(x0),nrow = 2)
+  conv <- c(999,999)
+  #points(xt[1], xt[2], col=2, pch=4, lwd=3)
+  i<-0
+  while (conv[1] != eps && conv[2] != eps)
+  {
+    alpha <- alpha0
+    #browser()
+    xt1   <- xt[,i+1]
+    xt_add    <- xt1 + alpha * gradient(xt1)
+    while (g(xt_add) < g(xt1))
+    {
+      alpha <- alpha / 2
+      xt_add    <- xt1 + alpha * gradient(xt1)
+    }
+    #points(xt[1], xt[2], col=2, pch=4, lwd=1)
+    conv <- round(xt_add,5)-round(xt1,5)
+    xt<- cbind (xt, xt_add)
+    i<- i+1
+  }
+  #points(xt[1], xt[2], col=4, pch=4, lwd=3)
+   cat('Steepest ascent method gives result',print(xt[,i+1]), 'at the ',i, 'th iteration for',xt[,1],'\n')
+
+}
+steepestasc(c(-0.2, 1))
+
+```
+
+
+#### b. Compute the ML-estimator with the function from a. for the data $(x_i, y_i)$ above.Use a stopping criterion such that you can trust five digits of both parameter estimates for $\beta_0$ and $\beta_1$. Use the starting value $(\beta_0, \beta_1) = (-0.2, 1)$. The exact way to use backtracking can be varied. Try two variants and compare the number of function and gradient evaluations performed to convergence.
+
+```{r echo= FALSE}
+steepestasc_newalfa_1 <- function(x0, eps = 1e-5, alpha0 = 1) {
+  xt <- matrix(c(x0), nrow = 2)
+  conv <- c(999, 999)
+  i <- 0
+  func_evals <- 0
+  grad_evals <- 0
+  
+  while (sum(abs(conv)) > eps) {
+    alpha <- alpha0
+    xt1 <- xt[, i + 1]
+    xt_add <- xt1 + alpha * gradient(xt1)
+    grad_evals <- grad_evals + 1
+    
+    while (g(xt_add) < g(xt1)) {
+      alpha <- min((i + 1) / 999, alpha / 2)
+      xt_add <- xt1 + alpha * gradient(xt1)
+      func_evals <- func_evals + 1
+    }
+    
+    conv <- xt_add - xt1
+    xt <- cbind(xt, xt_add)
+    i <- i + 1
+  }
+  
+  cat('Steepest ascent method gives result', xt[, i + 1], 'at the', i, 'th iteration\n')
+  cat('Number of function evaluations:', func_evals, '\n')
+  cat('Number of gradient evaluations:', grad_evals, '\n')
+}
+
+steepestasc_newalfa_2 <- function(x0, eps = 1e-5, alpha0 = 1) {
+  xt <- matrix(c(x0), nrow = 2)
+  conv <- c(999, 999)
+  i <- 0
+  func_evals <- 0
+  grad_evals <- 0
+  
+  while (sum(abs(conv)) > eps) {
+    alpha <- alpha0
+    xt1 <- xt[, i + 1]
+    xt_add <- xt1 + alpha * gradient(xt1)
+    grad_evals <- grad_evals + 1
+    
+    while (g(xt_add) < g(xt1)) {
+      alpha <- alpha / sqrt(i + 5)
+      xt_add <- xt1 + alpha * gradient(xt1)
+      func_evals <- func_evals + 1
+    }
+    
+    conv <- xt_add - xt1
+    xt <- cbind(xt, xt_add)
+    i <- i + 1
+  }
+  
+  cat('Steepest ascent method gives result', xt[, i + 1], 'at the', i, 'th iteration\n')
+  cat('Number of function evaluations:', func_evals, '\n')
+  cat('Number of gradient evaluations:', grad_evals, '\n')
+}
+steepestasc(c(-0.2, 1))
+steepestasc_newalfa_1(c(-0.2,1))
+steepestasc_newalfa_2(c(-0.2, 1))
+
+```
+As is shown, the last function has the fastest convergence speed at the 32 th iteration. when α is defined as min((i+1)/999, it has a quite small step and takes more times to convergence. When α*sqrt(i+5) is applied, the step decreases with the increasing of iteration number, which gives a quicker convergence. While α/2 is a good balance of accuracy and convergence speed.
+
+#### c. Use now the function `optim` with both the BFGS and the Nelder-Mead algorithm.Do you obtain the same results as for b.? Is there any difference in the precision of the result? Compare the number of function and gradient evaluations that are given in the standard output of `optim`.
+
+A: we get the similar results for the BFGS and the Nelder-Mead algorithm and they are also very close to b. The number of function and gradient evaluations are different for the BFGS and the Nelder-Mead algorithm. the BFG is 147 and Nelder-Mead is 407, it seems that Nelder-Mead algorithm need more iterations to converge because lacking of the gradient information.
+
+```{r echo= TRUE}
+optim_result_bfgs <- optim(c(-0.2, 1), g, gradient, method = "BFGS", control = list(fnscale = -1))
+optim_result_nm <- optim(c(-0.2, 1), g, method = "Nelder-Mead", control = list(fnscale = -1))
+
+cat('BFGS result:', optim_result_bfgs$par, 'with', optim_result_bfgs$counts, 'function and gradient evaluations\n')
+cat('Nelder-Mead result:', optim_result_nm$par, 'with', optim_result_nm$counts, 'function evaluations\n')
+```
+
+
+#### d. Use the function `glm` in R to obtain an ML-solution and compare it with your results before.
+
+A: The result is similar to the result from the steepest ascent method. but the iteration number is different. the glm function is only 4, the steepest ascent need 38 times.
+
+```{r echo= TRUE}
+model_glm <- glm(y ~ x, family = binomial(link = "logit"))
+summary(model_glm)
+
+```
+

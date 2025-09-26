@@ -1,0 +1,103 @@
+---
+title: "Assignment 3"
+output:
+  html_document:
+    latex_engine: lualatex
+    dev: ragg_png
+
+date: "2025-08-3"
+author:
+  - Xiaochen Liu
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE
+)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(car)
+library(ggcorrplot)
+
+```
+### Data import and cleaning
+The data used in this assignment is from the real estate market in Taiwan, which includes various features of houses such as house age, distance to the nearest MRT station, and house price. The dataset is first cleaned to focus on houses that are less than 20 years old.
+```{r echo=FALSE}
+
+
+estate <- read.csv("real-estate-taiwan.csv", stringsAsFactors = FALSE)
+
+#sort out houses with house age less than 20 years
+estate <- estate |>
+  filter(house_age < 20) 
+
+```
+### Data exploration
+
+At the beginning,  the correlation matrix is computed to understand the relationships between these variables. The correlation matrix shows the pairwise correlations between the numeric variables in the dataset. The values range from -1 to 1, where -1 indicates a perfect negative correlation, 0 indicates no correlation, and 1 indicates a perfect positive correlation.
+
+Since we aims to conclude the variable that has the most significant impact on house price, we will focus on the correlation between house prices and other variables. The most significant correlations are found between house prices and MRT distance, which is -0.7, indicating that as the distance to MRT increases, the price tends to decrease. From the correlation plot, we can see that there are no cva
+```{r echo=FALSE}
+
+correlations <- estate |>
+  select(where(is.numeric)) |>
+           cor(use = 'complete.obs')
+
+print(correlations)
+```
+
+```{r echo=FALSE}
+correlations_plot <- estate |>
+  select(where(is.numeric)) |>
+           cor(use = 'complete.obs')|>
+           ggcorrplot() 
+
+print(correlations_plot)
+```
+
+
+```{r echo=FALSE}
+plot1 <- ggplot(estate, aes(x = mrt_distance, y = house_price)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  labs(
+    title = "House Price vs. Distance to MRT Station",
+    x = "Distance to MRT Station (meters)",
+    y = "House Price (10,000 NTD)"
+  ) +
+  theme_minimal()+ 
+  geom_smooth(method = "loess", se = FALSE, color = "black")
+
+```
+
+As is shown from the plot, there is a negative correlation between house prices and distance to MRT station. The further away a house is from the MRT station, the lower its price tends to be. This suggests that proximity to public transportation is an important factor in determining house prices in Taiwan's real estate market.
+
+## Regression modelling
+By using a linear regression model, we can further analyze the relationship between house prices and various features of the houses. The model will include all relevant variables to predict house prices based on their characteristics. The output of the model will provide insights into which variables have the most significant impact on house prices.
+```{r eval=TRUE}
+model <- lm(house_price ~ ., data = estate)
+summary(model)
+```
+The linear regression model shows that the most significant variables affecting house prices are the distance to MRT station, number of convenience stores, latitude and house age. By removing the variables that are not significant, we can simplify the model to focus on the most impactful features and the risk of overfitting is reduced. 
+```{r eval=TRUE}
+model_simplified <- lm(house_price ~ mrt_distance + convenience_stores + latitude + house_age, data = estate)
+summary(model_simplified)
+model_simplified |>vif()
+```
+The simplified model is selected as the final model as it retains the most significant variables but still explain similar variation level (R-squared: 62.4%) as the model without any simplification (R-squared: 63.2%). And the adjusted R-squared values are not changed much when the model is simplified, indicating the influence brought by those removed variables are negligible. As the VIF values of the variables in the simplified model are all below 5, it indicates that there is no multicollinearity issue in the model.
+
+### Result
+
+
+```{r eval=TRUE}
+summary(model_simplified)
+```
+### Discussion
+The final regression model explains approximately 62% of the variance in house price and includes four significant predictors: MRT station distance, number of convenience stores, latitude, and house age. This model is best suited for urban residential areas with similar infrastructure and housing dynamics as the dataset (e.g., cities with MRT systems and dense amenities, possibly in Taiwan). It can help inform pricing strategies, real estate investments, and urban planning decisions.
+
+However, the model has several limitations. First, key housing features such as floor area, number of rooms, and building type are missing and could improve predictive power. Second, spatial effects (e.g., neighborhood clusters) are only partially captured by latitude; more granular location data or spatial regression models could offer better insights. Third, residuals show some large deviations, indicating the model may under- or overestimate prices for certain observations.
+
+Future studies should aim to incorporate more detailed housing attributes and explore nonlinear or machine learning models to capture complex interactions. Additionally, checking for spatial autocorrelation and including district-level fixed effects may improve model performance and interpretability.
