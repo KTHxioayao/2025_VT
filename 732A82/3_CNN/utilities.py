@@ -73,8 +73,9 @@ def build_CNN(input_shape, loss,
     # Add convolutional layers
     for i in range(n_conv_layers):
         model.add(Conv2D(filters= n_filters*2**i, kernel_size=(3,3),
-                                padding="same",activation= act_fun, 
+                                padding="same",activation= 'relu', 
                                 input_shape=input_shape))
+        model.add(BatchNormalization())
         model.add(MaxPooling2D(pool_size=(2, 2)))
     # Flatten the output of the convolutional layers
     model.add(Flatten())     # 展平层，把特征图转换为一维
